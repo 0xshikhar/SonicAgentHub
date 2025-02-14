@@ -1,200 +1,117 @@
-import Image from "next/image";
-import { useRouter } from "next/router";
-import { Fragment } from "react";
-import { Disclosure, Menu, Transition } from "@headlessui/react";
-import {
-  ChevronDownIcon,
-  Bars3Icon,
-  XMarkIcon,
-  InformationCircleIcon,
-} from "@heroicons/react/24/outline";
-import { Logo } from "./logo";
+import { useState } from 'react';
+import { useRouter } from 'next/router';
+import Image from 'next/image';
+import Link from 'next/link';
 
-function classNames(...classes: Array<string | boolean>): string {
-  return classes.filter(Boolean).join(" ");
-}
+const navigation = [
+  { name: 'Home', href: '/' },
+  { name: 'Agents', href: '/listing' },
+  { name: 'Dashboard', href: '/dashboard' },
+];
 
-/**
- * make sure you are passing router.pathname and not
- * router.asPath since we want to have stripped any
- * fragments, query params, or trailing slashes
- */
-const extractTabFromPath = (path: string) => {
-  return path.split("/").pop() as string;
-};
-
-export type NavbarItem = {
-  id: string;
-  name: string;
-  resource: string;
-};
-
-type NavbarProps = {
-  accountId: string;
-  appName: string;
-  items: Array<NavbarItem>;
-};
-
-export default function Navbar({ items, accountId, appName }: NavbarProps) {
+export default function Navbar() {
   const router = useRouter();
-  const resourceId = router.query.id;
-  const selected = extractTabFromPath(router.pathname);
-
-  const selectedItemClass =
-    "hover:cursor-pointer rounded-full bg-gray-900 px-3 py-2 text-lg font-medium text-white";
-  const unselectedItemClass =
-    "hover:cursor-pointer rounded-full px-3 py-2 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:text-white";
-
-  // Navigate to a resource sub-page:
-  // /apps/:appId/settings
-  // /accounts/:accountId/users
-  const navigateTo = (item: NavbarItem) => {
-    router.push(`/${item.resource}/${resourceId}/${item.id}`);
-  };
-
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
   return (
-    <Disclosure as="nav" className="bg-gray-800">
-      {({ open }) => (
-        <>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex h-16 items-center justify-between">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="block h-8 w-auto lg:hidden mb-2">
-                    <Logo />
-                  </div>
-                  <div className="hidden h-8 w-auto lg:block mb-2 hover:cursor-pointer">
-                    <Logo />
-                  </div>
-                </div>
-                <div className="hidden sm:ml-6 sm:block">
-                  <div className="flex space-x-4">
-                    {items ? (
-                      items.map((item) => {
-                        return (
-                          <button
-                            key={item.id}
-                            onClick={() => {
-                              navigateTo(item);
-                            }}
-                            className={
-                              selected === item.id
-                                ? selectedItemClass
-                                : unselectedItemClass
-                            }
-                          >
-                            {item.name}
-                          </button>
-                        );
-                      })
-                    ) : (
-                      <div></div>
-                    )}
-                  </div>
+    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-[#0A0F1E]/80 border-b border-white/5">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-20">
+          {/* Logo */}
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center">
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg blur opacity-50 group-hover:opacity-75 transition duration-200"></div>
+                <div className="relative flex items-center bg-[#0A0F1E] rounded-lg p-2">
+                  <Image
+                    src="/logo.svg"
+                    alt="Agent Market Logo"
+                    width={40}
+                    height={40}
+                    className="mr-3"
+                  />
+                  <span className="text-white text-xl font-semibold">Agent Market</span>
                 </div>
               </div>
-              <div className="hidden sm:ml-6 sm:block">
-                <div className="flex items-center">
-                  <button
-                    type="button"
-                    className="rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white"
-                  >
-                    <InformationCircleIcon
-                      className="h-6 w-6"
-                      aria-hidden="true"
-                    />
-                  </button>
-                  <p className="text-white">{appName}</p>
-
-                  {/* Profile dropdown */}
-                  <Menu as="div" className="relative ml-3">
-                    <div className="flex bg-gray-800 rounded-full items-center hover:ring-white hover:ring-2 hover:ring-offset-2 hover:ring-offset-gray-800 hover:outline-none hover:cursor-pointer">
-                      <Menu.Button className="flex rounded-full text-sm">
-                        <span className="sr-only">Open user menu</span>
-                        <div className="h-8 w-8 rounded-full">
-                          <Image
-                            className="h-8 w-8 rounded-full"
-                            src="/images/avatar.png"
-                            alt="avatar placeholder"
-                            height={32}
-                            width={32}
-                          />
-                        </div>
-                      </Menu.Button>
-                      <ChevronDownIcon
-                        className="ml-1 h-4 w-4 text-white"
-                        aria-hidden="true"
-                      />
-                    </div>
-                    <Transition
-                      as={Fragment}
-                      enter="transition ease-out duration-100"
-                      enterFrom="transform opacity-0 scale-95"
-                      enterTo="transform opacity-100 scale-100"
-                      leave="transition ease-in duration-75"
-                      leaveFrom="transform opacity-100 scale-100"
-                      leaveTo="transform opacity-0 scale-95"
-                    >
-                      <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                        <Menu.Item>
-                          {({ active }) => (
-                            <a
-                              href={`/accounts/${accountId}`}
-                              className={classNames(
-                                active ? "bg-gray-100" : "",
-                                "block px-4 py-2 text-sm text-gray-700"
-                              )}
-                            >
-                              Your account
-                            </a>
-                          )}
-                        </Menu.Item>
-                        <Menu.Item>
-                          {({ active }) => (
-                            <a
-                              href="#"
-                              className={classNames(
-                                active ? "bg-gray-100" : "",
-                                "block px-4 py-2 text-sm text-gray-700"
-                              )}
-                            >
-                              Settings
-                            </a>
-                          )}
-                        </Menu.Item>
-                        <Menu.Item>
-                          {({ active }) => (
-                            <a
-                              href="#"
-                              className={classNames(
-                                active ? "bg-gray-100" : "",
-                                "block px-4 py-2 text-sm text-gray-700"
-                              )}
-                            >
-                              Sign out
-                            </a>
-                          )}
-                        </Menu.Item>
-                      </Menu.Items>
-                    </Transition>
-                  </Menu>
-                </div>
-              </div>
-              <div className="-mr-2 flex sm:hidden">
-                {/* Mobile menu button */}
-                <Disclosure.Button className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
-                  <span className="sr-only">Open main menu</span>
-                  {open ? (
-                    <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
-                  ) : (
-                    <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
-                  )}
-                </Disclosure.Button>
-              </div>
-            </div>
+            </Link>
           </div>
-        </>
-      )}
-    </Disclosure>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`text-base font-medium transition-colors duration-200 ${
+                  router.pathname === item.href
+                    ? 'text-white'
+                    : 'text-gray-300 hover:text-white'
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => router.push('/agents/create')}
+              className="relative group hidden md:block"
+            >
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-200"></div>
+              <div className="relative px-6 py-2 bg-[#0A0F1E] rounded-lg text-white group-hover:bg-[#131B31] transition duration-200">
+                Add Your Agent
+              </div>
+            </button>
+
+            {/* Mobile Menu Button */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden relative w-10 h-10 bg-[#131B31] rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-colors duration-200"
+            >
+              {isMobileMenuOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Navigation Menu */}
+      <div className={`md:hidden ${isMobileMenuOpen ? 'block' : 'hidden'} border-t border-white/5`}>
+        <div className="px-4 pt-2 pb-3 space-y-1 bg-[#0A0F1E]/95 backdrop-blur-md">
+          {navigation.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                router.pathname === item.href
+                  ? 'text-white bg-[#131B31]'
+                  : 'text-gray-300 hover:text-white hover:bg-[#131B31]'
+              }`}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {item.name}
+            </Link>
+          ))}
+          <button
+            onClick={() => {
+              router.push('/agents/create');
+              setIsMobileMenuOpen(false);
+            }}
+            className="w-full mt-2 px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+          >
+            Add Your Agent
+          </button>
+        </div>
+      </div>
+    </nav>
   );
 }

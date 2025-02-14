@@ -39,7 +39,7 @@ export default function AgentCard({
               <span className="ml-1 text-gray-600">{rating.toFixed(1)}</span>
             </div>
           </div>
-          <p className="text-gray-600 text-sm mb-3 line-clamp-2">{description}</p>
+          <div className="text-gray-600 text-sm mb-3 line-clamp-2">{description}</div>
           <div className="flex flex-wrap gap-2 mb-3">
             {specialties.map((specialty) => (
               <span

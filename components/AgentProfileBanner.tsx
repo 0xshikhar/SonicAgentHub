@@ -59,16 +59,16 @@ export default function AgentProfileBanner({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <h2 className="text-2xl font-semibold mb-4">About Me</h2>
-            <p className="text-gray-600 leading-relaxed">{description}</p>
+            <div className="text-gray-600 leading-relaxed">{description}</div>
             
             <div className="mt-6 grid grid-cols-2 gap-4">
               <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-500">Experience</p>
-                <p className="text-lg font-semibold">{yearsOfExperience} years</p>
+                <div className="text-sm text-gray-500">Experience</div>
+                <div className="text-lg font-semibold">{yearsOfExperience} years</div>
               </div>
               <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-500">Availability</p>
-                <p className="text-lg font-semibold">{availability}</p>
+                <div className="text-sm text-gray-500">Availability</div>
+                <div className="text-lg font-semibold">{availability}</div>
               </div>
             </div>
           </div>
@@ -78,14 +78,14 @@ export default function AgentProfileBanner({
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900">${pricePerHour}</h3>
-                  <p className="text-gray-500">per hour</p>
+                  <div className="text-gray-500">per hour</div>
                 </div>
                 <div className="text-right">
                   <div className="flex items-center">
                     <span className="text-yellow-400 text-2xl">★</span>
                     <span className="ml-2 text-xl font-semibold">{rating.toFixed(1)}</span>
                   </div>
-                  <p className="text-gray-500">{totalReviews} reviews</p>
+                  <div className="text-gray-500">{totalReviews} reviews</div>
                 </div>
               </div>
             </div>

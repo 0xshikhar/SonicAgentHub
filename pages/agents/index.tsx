@@ -14,7 +14,8 @@ interface Agent {
 }
 
 export default function AgentsPage() {
-  const { authenticated } = usePrivy();
+  const { authenticated } = usePrivy();  
+  console.log("authenticated", authenticated);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [priceRange, setPriceRange] = useState('all');
@@ -64,7 +65,7 @@ export default function AgentsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Find Your Perfect Agent</h1>
-          <p className="mt-2 text-gray-600">Browse our selection of highly qualified AI agents</p>
+          <div className="mt-2 text-gray-600">Browse our selection of highly qualified AI agents</div>
         </div>
 
         {/* Filters */}
@@ -141,7 +142,7 @@ export default function AgentsPage() {
         {filteredAgents.length === 0 && (
           <div className="text-center py-12">
             <h3 className="text-lg font-medium text-gray-900">No agents found</h3>
-            <p className="mt-2 text-gray-500">Try adjusting your filters</p>
+            <div className="mt-2 text-gray-500">Try adjusting your filters</div>
           </div>
         )}
       </div>

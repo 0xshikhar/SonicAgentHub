@@ -13,5 +13,5 @@ export default function FormattedDate({ secsSinceEpoch }: Props) {
     },
   );
 
-  return <p>{formattedDate}</p>;
+  return <div>{formattedDate}</div>;
 }
