@@ -2,6 +2,7 @@ import { useRouter } from 'next/router';
 // import { usePrivy } from '@privy-io/react-auth';
 import Image from 'next/image';
 import { FeatureIcon } from '../components/FeatureIcons';
+import Link from 'next/link';
 
 export default function HomePage() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function HomePage() {
                       <div className="flex items-center space-x-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         <div className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                        Platform will be live soon.
+                          Platform will be live soon.
                         </div>
                       </div>
                     </div>
@@ -58,7 +59,9 @@ export default function HomePage() {
                   </div>
                 </button>
                 <button className="px-8 py-3 rounded-lg text-white border border-transparent bg-white/5 hover:bg-white/10 backdrop-blur-sm transition duration-200">
-                  Stake
+                  <Link href="/agents">
+                    Listing
+                  </Link>
                 </button>
               </div>
             </div>
@@ -198,7 +201,7 @@ export default function HomePage() {
                 <div className="mb-8">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
                     <svg className="w-6 h-6 text-[#2563EB]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
                 </div>
@@ -210,7 +213,7 @@ export default function HomePage() {
                     <span>100</span>
                   </div>
                   <div className="h-1 bg-[#1a2234] rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-gradient-to-r from-[#2563EB] to-[#7C3AED] rounded-full relative"
                       style={{ width: '95%' }}
                     >
@@ -333,8 +336,8 @@ export default function HomePage() {
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="h-1.5 bg-[#131B31] rounded-full w-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-[#2563EB] to-[#7C3AED] rounded-full" style={{ width: `${85 - i * 20}%` }}></div>
-                </div>
-              ))}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -373,7 +376,7 @@ export default function HomePage() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">
                 WHAT OTHERS SAY
               </span>
-          </h2>
+            </h2>
           </div>
 
           {/* Testimonials Grid */}
