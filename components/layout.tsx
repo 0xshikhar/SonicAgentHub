@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import Navbar from './navbar';  
 import Link from 'next/link';
 import Image from 'next/image';
+import DebugInfo from './DebugInfo';
 
 interface LayoutProps {
   children: ReactNode;
@@ -66,6 +67,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </div>
       </footer>
+      <DebugInfo />
     </div>
   );
 }

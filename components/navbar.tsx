@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Link from 'next/link';
+import LoginButton from './LoginButton';
 
 const navigation = [
   { name: 'Home', href: '/' },
   { name: 'Agents', href: '/listing' },
-  { name: 'Dashboard', href: '/dashboard' },
+  // { name: 'Dashboard', href: '/dashboard' },
 ];
 
 export default function Navbar() {
@@ -64,6 +65,14 @@ export default function Navbar() {
                 Add Your Agent
               </div>
             </button>
+
+            {/* New Login Button */}
+            {/* <button
+              className="relative px-6 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:opacity-90 transition-opacity"
+            >
+              Login
+            </button> */}
+            <LoginButton />
 
             {/* Mobile Menu Button */}
             <button 

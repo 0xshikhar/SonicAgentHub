@@ -20,17 +20,23 @@ async function handler(
     AuthenticateSuccessResponse | AuthenticationErrorResponse
   >,
 ) {
-  const headerAuthToken = req.headers.authorization?.replace(/^Bearer /, "");
-  const cookieAuthToken = req.cookies["privy-token"];
-
-  const authToken = cookieAuthToken || headerAuthToken;
-  if (!authToken) return res.status(401).json({ error: "Missing auth token" });
-
   try {
-    const claims = await client.verifyAuthToken(authToken);
-    return res.status(200).json({ claims });
-  } catch (e: any) {
-    return res.status(401).json({ error: e.message });
+    const authToken = req.headers.authorization?.replace('Bearer ', '');
+
+    if (!authToken) {
+      return res.status(401).json({ error: 'No auth token provided' });
+    }
+
+    const verified = await client.verifyAuthToken(authToken);
+
+    if (!verified) {
+      return res.status(401).json({ error: 'Invalid auth token' });
+    }
+
+    return res.status(200).json({ claims: verified });
+  } catch (error) {
+    console.error('Auth error:', error);
+    return res.status(500).json({ error: 'Authentication failed' });
   }
 }
 

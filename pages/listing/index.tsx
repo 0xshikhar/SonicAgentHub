@@ -1,199 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-
-interface Agent {
-  id: string;
-  name: string;
-  description: string;
-  category: 'Trading' | 'Social' | 'DeFi' | 'NFT' | 'Gaming' | 'DAO';
-  chains: ('ETH' | 'BSC' | 'Solana' | 'Polygon' | 'Arbitrum')[];
-  version: string;
-  score: number;
-  imageUrl: string;
-  contractAddress: string;
-  twitter?: string;
-  website?: string;
-  mainContract?: string;
-  stats: {
-    users: number;
-    transactions: number;
-    volume: number;
-  };
-}
+import { agents, categories, chains } from '../../lib/constant';
+import { usePrivy } from '@privy-io/react-auth';
+import LoadingState from '../../components/LoadingState';
 
 export default function ListingPage() {
+  const { ready, authenticated, user } = usePrivy();
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedChain, setSelectedChain] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const categories = [
-    { id: 'all', name: 'All Categories' },
-    { id: 'Trading', name: 'Trading Agents', icon: '📈' },
-    { id: 'Social', name: 'Social Agents', icon: '🤝' },
-    { id: 'DeFi', name: 'DeFi Agents', icon: '💰' },
-    { id: 'NFT', name: 'NFT Agents', icon: '🎨' },
-    { id: 'Gaming', name: 'Gaming Agents', icon: '🎮' },
-    { id: 'DAO', name: 'DAO Agents', icon: '🏛️' },
-  ];
+  useEffect(() => {
+    if (ready && !authenticated) {
+      router.push('/');
+    }
+  }, [ready, authenticated, router]);
 
-  const chains = [
-    { id: 'all', name: 'All Chains' },
-    { id: 'ETH', name: 'Ethereum', icon: '/chains/eth.svg' },
-    { id: 'BSC', name: 'BSC', icon: '/chains/bsc.svg' },
-    { id: 'Solana', name: 'Solana', icon: '/chains/sol.svg' },
-    { id: 'Polygon', name: 'Polygon', icon: '/chains/polygon.svg' },
-    { id: 'Arbitrum', name: 'Arbitrum', icon: '/chains/arbitrum.svg' },
-  ];
+  if (!ready || !authenticated) {
+    return <LoadingState />;
+  }
 
-  // Sample agents data
-  const agents: Agent[] = [
-    {
-      id: '1',
-      name: 'TradeMaster Pro',
-      description: 'Advanced trading bot with ML-powered market analysis',
-      category: 'Trading',
-      chains: ['ETH', 'BSC'],
-      version: '2.1.0',
-      score: 4.8,
-      imageUrl: '/agents/trading-bot.png',
-      contractAddress: '0x123...',
-      stats: {
-        users: 15000,
-        transactions: 1200000,
-        volume: 25000000,
-      },
-    },
-    {
-      id: '2',
-      name: 'SocialMaster',
-      description: 'Social media management agent with AI-driven content creation',
-      category: 'Social',
-      chains: ['ETH', 'BSC', 'Solana'],
-      version: '1.5.3',
-      score: 4.5,
-      imageUrl: '/agents/social-media-bot.png',
-      contractAddress: '0x456...',
-      stats: {
-        users: 10000,
-        transactions: 800000,
-        volume: 10000000,
-      },
-    },
-    {
-      id: '3',
-      name: 'DeFiTrader',
-      description: 'Automated DeFi trading agent with smart contract analysis',
-      category: 'DeFi',
-      chains: ['ETH', 'BSC', 'Polygon', 'Arbitrum'],
-      version: '1.2.0',
-      score: 4.7,
-      imageUrl: '/agents/defi-trading-bot.png',
-      contractAddress: '0x789...',
-      stats: {
-        users: 8000,
-        transactions: 6000000,
-        volume: 50000000,
-      },
-    },
-    {
-      id: '4',
-      name: 'NFTMarketAgent',
-      description: 'Automated NFT trading agent with market analysis',
-      category: 'NFT',
-      chains: ['ETH', 'BSC', 'Polygon'],
-      version: '1.1.0',
-      score: 4.6,
-      imageUrl: '/agents/nft-trading-bot.png',
-      contractAddress: '0xabc...',
-      stats: {
-        users: 12000,
-        transactions: 4000000,
-        volume: 30000000,
-      },
-    },
-    {
-      id: '5',
-      name: 'GamingMaster',
-      description: 'AI-powered gaming agent with strategic gameplay',
-      category: 'Gaming',
-      chains: ['ETH', 'BSC', 'Solana'],
-      version: '1.3.2',
-      score: 4.9,
-      imageUrl: '/agents/gaming-bot.png',
-      contractAddress: '0xdef...',
-      stats: {
-        users: 15000,
-        transactions: 10000000,
-        volume: 200000000,
-      },
-    },
-    {
-      id: '6',
-      name: 'DAOMaster',
-      description: 'DAO management agent with governance and proposal creation',
-      category: 'DAO',
-      chains: ['ETH', 'BSC', 'Polygon'],
-      version: '1.0.5',
-      score: 4.8,
-      imageUrl: '/agents/dao-bot.png',
-      contractAddress: '0xghi...',
-      stats: {
-        users: 10000,
-        transactions: 5000000,
-        volume: 100000000,
-      },
-    },
-    {
-      id: '7',
-      name: 'MarketMaster',
-      description: 'Market analysis agent with real-time data and trading insights',
-      category: 'Trading',
-      chains: ['ETH', 'BSC', 'Polygon'],
-      version: '1.2.3',
-      score: 4.7,
-      imageUrl: '/agents/market-bot.png',
-      contractAddress: '0xjkl...',
-      stats: {
-        users: 10000,
-        transactions: 5000000,
-        volume: 100000000,
-      },
-    },
-    {
-      id: '8',
-      name: 'SocialMaster',
-      description: 'Social media management agent with AI-driven content creation',
-      category: 'Social',
-      chains: ['ETH', 'BSC', 'Solana'],
-      version: '1.5.3',
-      score: 4.5,
-      imageUrl: '/agents/social-media-bot.png',
-      contractAddress: '0x456...',
-      stats: {
-        users: 10000,
-        transactions: 5000000,
-        volume: 100000000,
-      },
-    },
-    {
-      id: '9',
-      name: 'DeFiTrader',
-      description: 'Automated DeFi trading agent with smart contract analysis',
-      category: 'DeFi',
-      chains: ['ETH', 'BSC', 'Polygon', 'Arbitrum'],
-      version: '1.2.0',
-      score: 4.7,
-      imageUrl: '/agents/defi-trading-bot.png',
-      contractAddress: '0x789...',
-      stats: {
-        users: 8000,
-        transactions: 6000000,
-        volume: 50000000,
-      },
-    },
-  ];
+  console.log(chains); // Log the chains array to check its contents
 
   const filteredAgents = agents.filter((agent) => {
     const matchesCategory = selectedCategory === 'all' || agent.category === selectedCategory;
@@ -267,9 +96,9 @@ export default function ListingPage() {
                     : 'bg-[#131B31] text-gray-400 hover:text-white hover:bg-[#1a2234]'
                 }`}
               >
-                {chain.icon && (
+                {chain.logo && (
                   <Image
-                    src={chain.icon}
+                    src={chain.logo}
                     alt={chain.name}
                     width={20}
                     height={20}
@@ -301,12 +130,21 @@ export default function ListingPage() {
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center">
                     <div className="relative w-12 h-12 rounded-xl overflow-hidden mr-4">
-                      <Image
-                        src={agent.imageUrl}
-                        alt={agent.name}
-                        fill
-                        className="object-cover"
-                      />
+                      {agent.imageUrl ? (
+                        <Image
+                          src={agent.imageUrl}
+                          alt={agent.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <Image
+                          src="/logos/aiagent-bg.png"
+                          alt="Placeholder"
+                          fill
+                          className="object-cover"
+                        />
+                      )}
                     </div>
                     <div>
                       <h3 className="text-xl font-medium text-white">{agent.name}</h3>
@@ -352,20 +190,31 @@ export default function ListingPage() {
                 {/* Footer */}
                 <div className="flex items-center justify-between">
                   <div className="flex -space-x-2">
-                    {agent.chains.map((chain, index) => (
-                      <div
-                        key={chain}
-                        className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-[#0D1425]"
-                        style={{ zIndex: agent.chains.length - index }}
-                      >
-                        <Image
-                          src={`/chains/${chain.toLowerCase()}.svg`}
-                          alt={chain}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    ))}
+                    {agent.chains.map((chainId, index) => {
+                      const chainData = chains.find((c) => c.id === chainId);
+                      console.log(`Rendering chain ${chainId}:`, chainData); // Debug log
+                      
+                      return (
+                        <div
+                          key={chainId}
+                          className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-[#0D1425] bg-[#131B31] hover:scale-110 transition-transform duration-200"
+                          style={{ 
+                            zIndex: agent.chains.length - index,
+                            transform: `translateX(${index * -8}px)` 
+                          }}
+                        >
+                          {chainData && (
+                            <Image
+                              src={chainData.logo}
+                              alt={chainData.name}
+                              fill
+                              className="object-contain p-1.5"
+                              sizes="32px"
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="px-3 py-1 text-sm bg-[#131B31] text-blue-400 rounded-lg">

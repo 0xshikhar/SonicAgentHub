@@ -1,90 +1,95 @@
 "use client"
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { useState } from 'react';
-import { AgentMetric } from '../../types';
+import { useState, useEffect } from 'react';
+import { AgentMetric, Review } from '../../types';
+import { agents, chains } from '../../lib/constant';
+import LoadingState from '../../components/LoadingState';
 
 export default function AgentDetailsPage() {
   const router = useRouter();
   const { agentId } = router.query;
   const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'analytics'>('overview');
+  const [agent, setAgent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Sample agent data - would be fetched based on agentId
-  const agent = {
-    id: agentId,
-    name: 'TradeMaster Pro',
-    description: 'Advanced trading bot with ML-powered market analysis and real-time market insights. Leverages cutting-edge artificial intelligence to maximize trading opportunities across multiple chains.',
-    category: 'Trading',
-    chains: ['ETH', 'BSC', 'Polygon', 'Arbitrum'],
-    version: '2.1.0',
-    score: 4.8,
-    imageUrl: '/agents/trading-bot.png',
-    contractAddress: '0x123...',
-    stats: {
-      users: 15000,
-      transactions: 1200000,
-      volume: 25000000,
-    },
-    features: [
-      'Real-time market analysis',
-      'Multi-chain support',
-      'Advanced ML algorithms',
-      'Automated trading strategies',
-      'Risk management system',
-      'Performance analytics',
-    ],
-    metrics: [
-      {
-        label: 'Total Volume',
-        value: '$25M',
-        change: 12.5,
-        timeframe: 'vs. last month',
-      },
-      {
-        label: 'Active Users',
-        value: '15,000',
-        change: 8.2,
-        timeframe: 'vs. last month',
-      },
-      {
-        label: 'Success Rate',
-        value: '94.5%',
-        change: 2.1,
-        timeframe: 'vs. last month',
-      },
-      {
-        label: 'Avg. ROI',
-        value: '18.2%',
-        change: 5.4,
-        timeframe: 'vs. last month',
-      },
-    ],
-    reviews: [
-      {
-        id: '1',
-        user: {
-          name: 'Alex Thompson',
-          avatar: '/users/alex.jpg',
-          role: 'Crypto Trader',
-        },
-        rating: 5,
-        comment: 'This AI agent has completely transformed my trading strategy. The ML-powered analysis is incredibly accurate.',
-        date: '2024-02-28',
-      },
-      {
-        id: '2',
-        user: {
-          name: 'Sarah Chen',
-          avatar: '/users/sarah.jpg',
-          role: 'DeFi Developer',
-        },
-        rating: 4,
-        comment: 'Impressive performance across multiple chains. The risk management features are particularly well implemented.',
-        date: '2024-02-25',
-      },
-      // Add more reviews
-    ],
-  };
+  useEffect(() => {
+    if (agentId) {
+      // Find the agent from our data
+      const foundAgent = agents.find(a => a.id === agentId);
+      if (foundAgent) {
+        // Enhance the agent data with additional fields
+        setAgent({
+          ...foundAgent,
+          metrics: [
+            {
+              label: 'Total Volume',
+              value: `$${(foundAgent.stats.volume / 1000000).toFixed(1)}M`,
+              change: 12.5,
+              timeframe: 'vs. last month',
+            },
+            {
+              label: 'Active Users',
+              value: foundAgent.stats.users.toLocaleString(),
+              change: 8.2,
+              timeframe: 'vs. last month',
+            },
+            {
+              label: 'Total Transactions',
+              value: (foundAgent.stats.transactions / 1000).toFixed(1) + 'K',
+              change: 15.3,
+              timeframe: 'vs. last month',
+            },
+            {
+              label: 'Success Rate',
+              value: '94.5%',
+              change: 2.1,
+              timeframe: 'vs. last month',
+            },
+          ],
+          features: [
+            'Real-time market analysis',
+            'Multi-chain support',
+            'Advanced ML algorithms',
+            'Automated trading strategies',
+            'Risk management system',
+            'Performance analytics',
+          ],
+          reviews: [
+            {
+              id: '1',
+              user: {
+                name: 'Alex Thompson',
+                avatar: '/users/alex.jpg',
+                role: 'Crypto Trader',
+              },
+              rating: 5,
+              comment: `This ${foundAgent.name} has completely transformed my strategy. The analysis is incredibly accurate.`,
+              date: '2024-02-28',
+            },
+            {
+              id: '2',
+              user: {
+                name: 'Sarah Chen',
+                avatar: '/users/sarah.jpg',
+                role: 'DeFi Developer',
+              },
+              rating: 4,
+              comment: `Impressive performance across multiple chains. The ${foundAgent.category} features are particularly well implemented.`,
+              date: '2024-02-25',
+            },
+          ],
+        });
+      } else {
+        router.push('/404');
+      }
+      setLoading(false);
+    }
+  }, [agentId, router]);
+
+  if (loading || !agent) {
+    return <LoadingState />;
+  }
 
   const MetricCard = ({ metric }: { metric: AgentMetric }) => (
     <div className="bg-[#0D1425] rounded-2xl p-6 relative overflow-hidden group">
@@ -190,7 +195,7 @@ export default function AgentDetailsPage() {
                 <div className="bg-[#0D1425] rounded-2xl p-8">
                   <h2 className="text-xl font-medium text-white mb-6">Key Features</h2>
                   <div className="grid grid-cols-2 gap-4">
-                    {agent.features.map((feature, index) => (
+                    {agent.features.map((feature: string, index: number) => (
                       <div key={index} className="flex items-center">
                         <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center mr-3">
                           <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,7 +210,7 @@ export default function AgentDetailsPage() {
 
                 {/* Metrics Grid */}
                 <div className="grid grid-cols-2 gap-6">
-                  {agent.metrics.map((metric, index) => (
+                  {agent.metrics.map((metric: AgentMetric, index: number) => (
                     <MetricCard key={index} metric={metric} />
                   ))}
                 </div>
@@ -214,7 +219,7 @@ export default function AgentDetailsPage() {
 
             {activeTab === 'reviews' && (
               <div className="space-y-6">
-                {agent.reviews.map((review) => (
+                {agent.reviews.map((review: Review) => ( 
                   <div key={review.id} className="bg-[#0D1425] rounded-2xl p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center">
@@ -271,21 +276,26 @@ export default function AgentDetailsPage() {
             <div className="bg-[#0D1425] rounded-2xl p-6">
               <h2 className="text-lg font-medium text-white mb-4">Supported Chains</h2>
               <div className="flex flex-wrap gap-3">
-                {agent.chains.map((chain) => (
-                  <div
-                    key={chain}
-                    className="flex items-center px-3 py-2 bg-[#131B31] rounded-lg"
-                  >
-                    <Image
-                      src={`/chains/${chain.toLowerCase()}.svg`}
-                      alt={chain}
-                      width={20}
-                      height={20}
-                      className="mr-2"
-                    />
-                    <span className="text-gray-300">{chain}</span>
-                  </div>
-                ))}
+                {agent.chains.map((chainId: string) => {
+                  const chainData = chains.find(c => c.id === chainId);
+                  return (
+                    <div
+                      key={chainId}
+                      className="flex items-center px-3 py-2 bg-[#131B31] rounded-lg"
+                    >
+                      {chainData && (
+                        <Image
+                          src={chainData.logo}
+                          alt={chainData.name}
+                          width={20}
+                          height={20}
+                          className="mr-2"
+                        />
+                      )}
+                      <span className="text-gray-300">{chainData?.name || chainId}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -327,22 +337,32 @@ export default function AgentDetailsPage() {
   );
 }
 
-// This would typically fetch data from your API
+// Add getStaticPaths to pre-render agent pages
 export async function getStaticPaths() {
+  const paths = agents.map((agent) => ({
+    params: { agentId: agent.id },
+  }));
+
   return {
-    paths: [
-      { params: { agentId: '1' } },
-      // Add more static paths here
-    ],
-    fallback: true,
+    paths,
+    fallback: false,
   };
 }
 
+// Add getStaticProps to fetch agent data at build time
 export async function getStaticProps({ params }: { params: { agentId: string } }) {
-  console.log("params", params);
-  // Fetch agent data based on params.agentId
+  const agent = agents.find((a) => a.id === params.agentId);
+
+  if (!agent) {
+    return {
+      notFound: true,
+    };
+  }
+
   return {
-    props: {},
+    props: {
+      agent,
+    },
     revalidate: 60, // Revalidate every 60 seconds
   };
 } 
