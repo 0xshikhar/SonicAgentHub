@@ -1,10 +1,4 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrivyClient } from '@privy-io/server-auth';
-
-const privyClient = new PrivyClient(
-  process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
-  process.env.PRIVY_APP_SECRET!
-);
 
 // This would typically come from your database
 interface Agent {
@@ -111,11 +105,11 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     }
 
     // Verify the Privy JWT token
-    const claims = await privyClient.verifyAuthToken(authToken);
+    // const claims = await privyClient.verifyAuthToken(authToken);
     
-    if (!claims) {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
+    // if (!claims) {
+    //   return res.status(401).json({ message: 'Invalid token' });
+    // }
 
     // Here you would typically:
     // 1. Validate the request body

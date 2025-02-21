@@ -1,5 +1,4 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrivyClient, AuthTokenClaims } from '@privy-io/server-auth';
 
 // This would typically be your database model
 interface Booking {
@@ -14,11 +13,6 @@ interface Booking {
   status: 'pending' | 'confirmed' | 'cancelled';
   createdAt: string;
 }
-
-const privyClient = new PrivyClient(
-  process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
-  process.env.PRIVY_APP_SECRET!
-);
 
 export default async function handler(
   req: NextApiRequest,
@@ -39,12 +33,9 @@ export default async function handler(
       return res.status(401).json({ message: 'Missing auth token' });
     }
 
-    // Verify the Privy JWT token
-    const claims = await privyClient.verifyAuthToken(authToken);
-    
-    if (!claims) {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
+    // if (!claims) {
+    //   return res.status(401).json({ message: 'Invalid token' });
+    // }
 
     const { agentId, userId, date, startTime, duration, totalPrice, message } = req.body;
 

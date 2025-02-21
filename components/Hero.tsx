@@ -5,7 +5,6 @@ import Image from 'next/image';
 import HeroAnimation from './HeroAnimation'; // Import the animation component
 import AIAgentModel from './AIAgentModel'; // Import the 3D model component
 import { FeatureIcon } from './FeatureIcons';
-import { chains } from './../lib/constant';
 
 const HeroSection = () => {
     const router = useRouter();
@@ -104,8 +103,7 @@ const HeroSection = () => {
                             <p className="text-gray-400 text-sm mb-6 font-medium tracking-wide">
                                 Supported Blockchains
                             </p>
-                            <div className="flex flex-wrap items-center gap-6">
-
+                            {/* <div className="flex flex-wrap items-center gap-6">
                                 {chains.map((chain, index) => (
                                     <div key={index} className="group relative transition-all duration-300 hover:scale-110">
                                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full blur-lg group-hover:blur-xl transition-all duration-300"></div>
@@ -120,9 +118,7 @@ const HeroSection = () => {
                                         </div>
                                     </div>
                                 ))}
-                            </div>
-
-
+                            </div> */}
                         </div>
                     </div>
 

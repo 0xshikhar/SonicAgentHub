@@ -5,7 +5,7 @@ export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // List of protected routes
-  const protectedRoutes = ['/agents', '/dashboard'];
+  const protectedRoutes = ['', '/dashboard'];
 
   if (protectedRoutes.some(route => path.startsWith(route))) {
     // Check if user is authenticated (you might want to check for a specific cookie or header)

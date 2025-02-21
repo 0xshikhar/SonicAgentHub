@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { AgentMetric, Review } from '../../types';
-import { agents, chains } from '../../lib/constant';
+import { agents } from '../../lib/constant';
 import LoadingState from '../../components/LoadingState';
 
 export default function AgentDetailsPage() {
@@ -275,7 +275,7 @@ export default function AgentDetailsPage() {
             {/* Chain Support */}
             <div className="bg-[#0D1425] rounded-2xl p-6">
               <h2 className="text-lg font-medium text-white mb-4">Supported Chains</h2>
-              <div className="flex flex-wrap gap-3">
+              {/* <div className="flex flex-wrap gap-3">
                 {agent.chains.map((chainId: string) => {
                   const chainData = chains.find(c => c.id === chainId);
                   return (
@@ -296,7 +296,7 @@ export default function AgentDetailsPage() {
                     </div>
                   );
                 })}
-              </div>
+              </div> */}
             </div>
 
             {/* Contract Info */}

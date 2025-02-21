@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
 
 interface BookingFormProps {
   agentId: string;
@@ -8,7 +7,7 @@ interface BookingFormProps {
 }
 
 export default function BookingForm({ agentId, agentName, pricePerHour }: BookingFormProps) {
-  const { user, authenticated } = usePrivy();
+  
   const [formData, setFormData] = useState({
     date: '',
     startTime: '',

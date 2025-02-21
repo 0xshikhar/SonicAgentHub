@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Link from 'next/link';
-import LoginButton from './LoginButton';
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -26,12 +27,12 @@ export default function Navbar() {
                 <div className="relative flex items-center bg-[#0A0F1E] rounded-lg p-2">
                   <Image
                     src="/logo.svg"
-                    alt="Agent Market Logo"
+                    alt="Agent Chain Logo"
                     width={40}
                     height={40}
                     className="mr-3"
                   />
-                  <span className="text-white text-xl font-semibold">Agent Market</span>
+                  <span className="text-white text-xl font-semibold">Agent Chain</span>
                 </div>
               </div>
             </Link>
@@ -72,8 +73,8 @@ export default function Navbar() {
             >
               Login
             </button> */}
-            <LoginButton />
-
+            <ConnectButton />
+            
             {/* Mobile Menu Button */}
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
