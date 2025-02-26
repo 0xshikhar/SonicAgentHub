@@ -1,6 +1,5 @@
-'use client';
 
-import * as React from 'react';
+import React from 'react';
 import '@rainbow-me/rainbowkit/styles.css';
 
 import {
@@ -52,7 +51,7 @@ const demoAppInfo = {
 
 const queryClient = new QueryClient();
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export default function Providers({ children }: { children: React.ReactNode }) {
     console.log("wallet", process.env.WALLET_CONNECT_PROJECT_ID)
     const [mounted, setMounted] = React.useState(false);
     React.useEffect(() => setMounted(true), []);

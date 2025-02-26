@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAccount } from 'wagmi';
 
 interface BookingFormProps {
   agentId: string;
@@ -7,7 +8,8 @@ interface BookingFormProps {
 }
 
 export default function BookingForm({ agentId, agentName, pricePerHour }: BookingFormProps) {
-  
+  const { address, isConnected, isReconnecting, isDisconnected } = useAccount();
+
   const [formData, setFormData] = useState({
     date: '',
     startTime: '',
@@ -18,8 +20,9 @@ export default function BookingForm({ agentId, agentName, pricePerHour }: Bookin
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!authenticated) {
+    if (!isConnected) {
       // Handle unauthenticated state
+      console.log('Not authenticated');
       return;
     }
 
@@ -32,7 +35,7 @@ export default function BookingForm({ agentId, agentName, pricePerHour }: Bookin
         },
         body: JSON.stringify({
           agentId,
-          userId: user?.id,
+          userId: address,
           ...formData,
           totalPrice: pricePerHour * formData.duration,
         }),
@@ -69,7 +72,7 @@ export default function BookingForm({ agentId, agentName, pricePerHour }: Bookin
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
       <h3 className="text-xl font-semibold mb-4">Book {agentName}</h3>
-      
+
       <div>
         <label htmlFor="date" className="block text-sm font-medium text-gray-700">
           Date
@@ -146,14 +149,13 @@ export default function BookingForm({ agentId, agentName, pricePerHour }: Bookin
 
       <button
         type="submit"
-        disabled={isSubmitting || !authenticated}
-        className={`w-full py-3 px-4 rounded-md text-white font-medium ${
-          isSubmitting || !authenticated
+        disabled={isSubmitting || !isConnected}
+        className={`w-full py-3 px-4 rounded-md text-white font-medium ${isSubmitting || !isConnected
             ? 'bg-gray-400 cursor-not-allowed'
             : 'bg-blue-600 hover:bg-blue-700'
-        }`}
+          }`}
       >
-        {isSubmitting ? 'Submitting...' : authenticated ? 'Book Now' : 'Please Login to Book'}
+        {isSubmitting ? 'Submitting...' : isConnected ? 'Book Now' : 'Please Login to Book'}
       </button>
     </form>
   );

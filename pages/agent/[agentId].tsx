@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { AgentMetric, Review } from '../../types';
-import { agents } from '../../lib/constant';
+import { agents } from '../../lib/constants';
 import LoadingState from '../../components/LoadingState';
 
 export default function AgentDetailsPage() {

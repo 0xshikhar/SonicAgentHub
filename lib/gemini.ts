@@ -20,7 +20,7 @@ export const askGemini = async ({
     process.env.GOOGLE_GEMINI_API_KEY_3!,
   ];
 
-  const RANDOM_GEMINI_API_KEY = keys[Math.floor(Math.random() * keys.length)];
+  const RANDOM_GEMINI_API_KEY = keys[Math.floor(Math.random() * keys.length)] || '1';
 
   const genAI = new GoogleGenerativeAI(RANDOM_GEMINI_API_KEY);
 
@@ -48,7 +48,7 @@ export const askGeminiWithMessagesAndSystemPrompt = async ({
     process.env.GOOGLE_GEMINI_API_KEY_3!,
   ];
 
-  const RANDOM_GEMINI_API_KEY = keys[Math.floor(Math.random() * keys.length)];
+  const RANDOM_GEMINI_API_KEY = keys[Math.floor(Math.random() * keys.length)] || '';
 
   const genAI = new GoogleGenerativeAI(RANDOM_GEMINI_API_KEY);
 
@@ -60,7 +60,7 @@ export const askGeminiWithMessagesAndSystemPrompt = async ({
     },
   });
 
-  const lastMessageContent = messages[messages.length - 1].content;
+  const lastMessageContent = messages[messages.length - 1]?.content;
   //   console.log(" 👀  MY LAST MESSAGE IS:", lastMessageContent);
 
   // edit all previous message so if role is assistant, change it to "model":
@@ -78,7 +78,7 @@ export const askGeminiWithMessagesAndSystemPrompt = async ({
     history: previousMessages as any[],
   });
 
-  const result = await chat.sendMessage(lastMessageContent);
+  const result = await chat.sendMessage(lastMessageContent || '');
   const responseText = result.response.text();
   return responseText;
 };
@@ -86,7 +86,7 @@ export const askGeminiWithMessagesAndSystemPrompt = async ({
 export const askGeminiThinking = async ({
   messages,
   temperature = 0.8,
-  useCase = "default",
+  useCase = "default",  
 }: {
   messages: CoreMessage[];
   temperature?: number;
@@ -98,7 +98,7 @@ export const askGeminiThinking = async ({
     process.env.GOOGLE_GEMINI_API_KEY_3!,
   ];
 
-  const RANDOM_GEMINI_API_KEY = keys[Math.floor(Math.random() * keys.length)];
+  const RANDOM_GEMINI_API_KEY = keys[Math.floor(Math.random() * keys.length)] || '';
 
   const google = createGoogleGenerativeAI({
     apiKey: RANDOM_GEMINI_API_KEY,
