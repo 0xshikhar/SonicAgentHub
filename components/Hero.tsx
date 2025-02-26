@@ -92,7 +92,7 @@ const HeroSection = () => {
                                 </div>
                             </button>
                             <button className="px-8 py-4 rounded-lg text-white border border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 backdrop-blur-sm transition duration-200 font-medium flex items-center justify-center">
-                                <Link href="/listing">
+                                <Link href="/agents">
                                     <span>Explore Agents</span>
                                 </Link>
                             </button>

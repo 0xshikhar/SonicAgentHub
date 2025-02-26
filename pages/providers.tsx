@@ -1,4 +1,3 @@
-
 import React from 'react';
 import '@rainbow-me/rainbowkit/styles.css';
 
@@ -26,6 +25,7 @@ import {
 } from 'wagmi/chains';
 
 import { agentChain } from '../lib/agentChain';
+import { WalletAuthProvider } from '../components/WalletAuthProvider';
 
 // import { publicProvider } from 'wagmi/providers/public';
 // import { alchemyProvider } from "wagmi/providers/alchemy";
@@ -59,7 +59,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <WagmiProvider config={config}>
             <QueryClientProvider client={queryClient}>
                 <RainbowKitProvider appInfo={demoAppInfo}>
-                    {mounted && children}
+                    <WalletAuthProvider>
+                        {mounted && children}
+                    </WalletAuthProvider>
                 </RainbowKitProvider>
             </QueryClientProvider>
         </WagmiProvider>

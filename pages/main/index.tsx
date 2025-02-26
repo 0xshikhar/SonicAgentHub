@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { useChat } from 'ai/react';
+import { ChatMessage } from '@/components/ChatMessage';
 
 // Types
 interface Agent {
@@ -25,7 +26,7 @@ const MOCK_AGENTS: Agent[] = [
         name: 'Twitter Agent',
         description: 'Agent created from Twitter profile',
         type: 'twitter',
-        profileImage: 'https://placehold.co/100x100',
+        profileImage: '/logos/twitter.png',
         systemPrompt: 'You are an agent created from a Twitter profile. Be concise and tweet-like in your responses.'
     },
     {
@@ -33,7 +34,7 @@ const MOCK_AGENTS: Agent[] = [
         name: 'Custom Character',
         description: 'Agent created from character file',
         type: 'character',
-        profileImage: 'https://placehold.co/100x100',
+        profileImage: '/logos/custom-bot.jpg',
         systemPrompt: 'You are a custom character agent with unique personality traits.'
     }
 ];
@@ -64,8 +65,6 @@ const AgentPlatform: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-            <Header user={user} />
-
             <main className="container mx-auto px-4 py-8 flex-grow">
                 {activeTab === 'dashboard' && (
                     <Dashboard agents={agents} navigateTo={navigateTo} setAgents={setAgents} />
@@ -82,40 +81,7 @@ const AgentPlatform: React.FC = () => {
                     />
                 )}
             </main>
-
-            <Footer />
         </div>
-    );
-};
-
-// Header Component
-const Header: React.FC<{ user: User | null }> = ({ user }) => {
-    return (
-        <header className="bg-white dark:bg-gray-800 shadow">
-            <div className="container mx-auto px-4 py-6">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                        Agent Platform
-                    </h1>
-                    <div className="flex items-center space-x-4">
-                        {user ? (
-                            <div className="flex items-center space-x-2">
-                                <img
-                                    src={user.profileImage}
-                                    alt={user.name}
-                                    className="w-8 h-8 rounded-full"
-                                />
-                                <span className="text-gray-700 dark:text-gray-300">{user.name}</span>
-                            </div>
-                        ) : (
-                            <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition duration-200">
-                                Sign In
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </header>
     );
 };
 
@@ -307,8 +273,8 @@ const CreateAgent: React.FC<{
                         <button
                             type="button"
                             className={`px-4 py-2 rounded-md transition-colors duration-200 ${creationType === 'twitter'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                                 }`}
                             onClick={() => setCreationType('twitter')}
                         >
@@ -317,8 +283,8 @@ const CreateAgent: React.FC<{
                         <button
                             type="button"
                             className={`px-4 py-2 rounded-md transition-colors duration-200 ${creationType === 'character'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                                 }`}
                             onClick={() => setCreationType('character')}
                         >
@@ -464,7 +430,7 @@ const ChatWithAgent: React.FC<{
     const [isFirstMessage, setIsFirstMessage] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [debugInfo, setDebugInfo] = useState<string>('');
-    const [chatMessages, setChatMessages] = useState<Array<{id: string; role: 'user' | 'assistant' | 'system'; content: string}>>([
+    const [chatMessages, setChatMessages] = useState<Array<{ id: string; role: 'user' | 'assistant' | 'system'; content: string }>>([
         {
             id: '1',
             role: 'system',
@@ -489,24 +455,24 @@ const ChatWithAgent: React.FC<{
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!userInput.trim() || isProcessing) return;
-        
+
         setIsFirstMessage(false);
         setIsProcessing(true);
-        
+
         const userMessage = {
             id: Date.now().toString(),
             role: 'user' as const,
             content: userInput
         };
-        
+
         // Add user message to chat
         setChatMessages(prev => [...prev, userMessage]);
         console.log('Submitting message:', userInput);
         setDebugInfo(prev => prev + '\nSubmitting: ' + userInput + ' at ' + new Date().toISOString());
-        
+
         // Clear input
         setUserInput('');
-        
+
         try {
             // Call the API directly
             const response = await fetch('/api/chat', {
@@ -520,33 +486,33 @@ const ChatWithAgent: React.FC<{
                     agentType: agent.type,
                 }),
             });
-            
+
             console.log('Chat API response status:', response.status);
             setDebugInfo(prev => prev + '\nResponse received: ' + new Date().toISOString());
-            
+
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('Error response:', errorText);
                 setDebugInfo(prev => prev + '\nError: ' + errorText);
                 throw new Error(errorText);
             }
-            
+
             const data = await response.json();
             console.log('Response data:', data);
             setDebugInfo(prev => prev + '\nResponse data: ' + JSON.stringify(data).substring(0, 50) + '...');
-            
+
             // Add assistant message to chat
             setChatMessages(prev => [...prev, {
                 id: data.id || Date.now().toString(),
                 role: 'assistant',
                 content: data.content || data.text || "Sorry, I couldn't generate a response."
             }]);
-            
+
             setDebugInfo(prev => prev + '\nChat finished: ' + new Date().toISOString());
         } catch (error) {
             console.error('Chat error:', error);
             setDebugInfo(prev => prev + '\nError: ' + (error instanceof Error ? error.message : String(error)));
-            
+
             // Add error message to chat
             setChatMessages(prev => [...prev, {
                 id: Date.now().toString(),
@@ -596,19 +562,12 @@ const ChatWithAgent: React.FC<{
                 )}
 
                 {chatMessages.filter(m => m.role !== 'system').map((message) => (
-                    <div
+                    <ChatMessage 
                         key={message.id}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                        <div
-                            className={`max-w-[80%] rounded-2xl px-4 py-2 ${message.role === 'user'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white'
-                                }`}
-                        >
-                            {message.content}
-                        </div>
-                    </div>
+                        id={message.id}
+                        role={message.role}
+                        content={message.content || ''}
+                    />
                 ))}
 
                 {isProcessing && (
@@ -620,16 +579,6 @@ const ChatWithAgent: React.FC<{
                                 <div className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500 animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                             </div>
                         </div>
-                    </div>
-                )}
-
-                {/* Debug information */}
-                {debugInfo && (
-                    <div className="mt-4 p-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-xs font-mono whitespace-pre-wrap">
-                        <details>
-                            <summary className="cursor-pointer text-gray-600 dark:text-gray-400">Debug Info</summary>
-                            {debugInfo}
-                        </details>
                     </div>
                 )}
 
@@ -660,33 +609,17 @@ const ChatWithAgent: React.FC<{
                     </button>
                 </div>
             </form>
-        </div>
-    );
-};
 
-// Footer Component
-const Footer: React.FC = () => {
-    return (
-        <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-6">
-            <div className="container mx-auto px-4">
-                <div className="flex flex-col md:flex-row justify-between items-center">
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">
-                        &copy; {new Date().getFullYear()} Agent Platform. All rights reserved.
-                    </p>
-                    <div className="flex space-x-6 mt-4 md:mt-0">
-                        <a href="#" className="text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400">
-                            Terms
-                        </a>
-                        <a href="#" className="text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400">
-                            Privacy
-                        </a>
-                        <a href="#" className="text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400">
-                            Contact
-                        </a>
-                    </div>
+            {/* Debug information */}
+            {debugInfo && (
+                <div className="mt-4 p-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-xs font-mono whitespace-pre-wrap">
+                    <details>
+                        <summary className="cursor-pointer text-gray-600 dark:text-gray-400">Debug Info</summary>
+                        {debugInfo}
+                    </details>
                 </div>
-            </div>
-        </footer>
+            )}
+        </div>
     );
 };
 

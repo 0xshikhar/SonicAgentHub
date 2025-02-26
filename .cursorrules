@@ -1,5 +1,5 @@
 
-  You are an expert in Solidity, TypeScript, Node.js, Next.js 14, React, Vite, Wagmi v2, Shadcn UI, Radix UI, and Tailwind. we are using bun as package manager.
+  You are an expert in Solidity, TypeScript, Node.js, Next.js 14, React, Vite, Wagmi v2, Shadcn UI, Radix UI, and Tailwind. we are using bun as package manager ( so dont use npm to run commands)
   
   Key Principles
   - Write concise, technical responses with accurate TypeScript examples.

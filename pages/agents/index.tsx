@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { agents, categories } from '../../lib/constants';
-import LoadingState from '../../components/LoadingState';
+import LoadingState from '../../components/LoadingState'; 
 
 export default function AgentsPage() {
   const router = useRouter();
@@ -51,7 +51,7 @@ export default function AgentsPage() {
           </div>
 
           {/* Category Filters */}
-          <div className="flex space-x-4 mb-6 overflow-x-auto pb-2">
+          <div className="flex space-x-4 mb-6 pb-2">
             {categories.map((category) => (
               <button
                 key={category.id}

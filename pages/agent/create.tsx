@@ -84,7 +84,7 @@ export default function CreateAgentPage() {
     // Here you would typically send the data to your API
     console.log(formData);
     // Redirect to the listing page after successful submission
-    router.push('/listing');
+    router.push('/agents');
   };
 
   const renderStep1 = () => (
