@@ -24,8 +24,8 @@ import {
     auroraTestnet,
 } from 'wagmi/chains';
 
-import { agentChain } from '../lib/agentChain';
-import { WalletAuthProvider } from '../components/WalletAuthProvider';
+import { agentChain } from '@/lib/agentChain';
+import { WalletAuthProvider } from '@/components/WalletAuthProvider';
 
 // import { publicProvider } from 'wagmi/providers/public';
 // import { alchemyProvider } from "wagmi/providers/alchemy";

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { agents, categories } from '../../lib/constants';
-import LoadingState from '../../components/LoadingState'; 
+import { agents, categories } from '@/lib/constants';
+import LoadingState from '@/components/LoadingState'; 
 
 export default function AgentsPage() {
   const router = useRouter();

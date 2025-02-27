@@ -1,10 +1,10 @@
 import { useRouter } from 'next/router';
 // import { usePrivy } from '@privy-io/react-auth';
 import Image from 'next/image';
-import { FeatureIcon } from '../components/FeatureIcons';
+import { FeatureIcon } from '@/components/FeatureIcons';
 import Link from 'next/link';
-import HeroSection from '../components/Hero';
-import HeroAnimation from '../components/HeroAnimation';
+import HeroSection from '@/components/Hero';
+import HeroAnimation from '@/components/HeroAnimation';
 
 export default function HomePage() {
   const router = useRouter();

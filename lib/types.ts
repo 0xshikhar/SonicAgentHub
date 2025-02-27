@@ -126,7 +126,7 @@ export type ActionEvent = {
     created_at: Date;
 };
 
-export type SmolTweet = {
+export type AgentTweet = {
     handle: string;
     content: string;
     action_type: string;
@@ -138,7 +138,7 @@ export type SmolTweet = {
     created_at: Date;
 };
 
-export type SmolTweetWithUserData = {
+export type AgentTweetWithUserData = {
     id?: string;
     handle: string;
     content: string;
@@ -180,7 +180,7 @@ export type LifeContextChange = {
     action_id: string;
 };
 
-export type SmolWalletRow = {
+export type AgentWalletRow = {
     handle: string;
     address: string;
     private_key: string;

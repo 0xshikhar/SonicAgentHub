@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import AgentCard from '../../components/AgentCard';
+import AgentCard from '@/components/AgentCard';
 
 // This would typically come from your API
 interface Agent {

@@ -1,8 +1,8 @@
-import "../styles/globals.css";
-import type { AppProps } from "next/app";
-import Head from "next/head";
-import Layout from '../components/layout';
-import Providers from './providers';
+import type { AppProps } from 'next/app';
+import Head from 'next/head';
+import '@/styles/globals.css';
+import Providers from '@/pages/providers';
+import { Navbar } from '@/components/layout/navbar'
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -13,9 +13,12 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Providers>
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
+        <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <main className="flex-grow">
+            <Component {...pageProps} />
+          </main>
+        </div>
       </Providers>
     </>
   );

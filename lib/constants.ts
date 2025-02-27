@@ -179,7 +179,7 @@ export const LIFE_GOALS_DEFAULT_COUNT = 6;
 
 // * twitter api:
 export const MAX_PUBLICATIONS_WHEN_PARSING_PROFILE = 92;
-export const MAX_TWEET_API_CALL_COUNT = 8;
+export const MAX_TWEET_API_CALL_COUNT = 2;
 
 // * AI models:
 export const GEMINI_LATEST = "gemini-2.0-flash-exp";

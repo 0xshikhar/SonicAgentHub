@@ -1,4 +1,4 @@
-import { withWalletAuth } from '../../lib/withWalletAuth'
+import { withWalletAuth } from '@/lib/withWalletAuth'
 
 function DashboardPage() {
   return (
