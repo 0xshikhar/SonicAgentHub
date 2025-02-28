@@ -81,6 +81,62 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_chain_general_agents: {
+        Row: {
+          agent_type: string
+          background: string | null
+          created_at: string | null
+          created_by: number | null
+          description: string | null
+          handle: string
+          id: string
+          is_public: boolean | null
+          name: string
+          profile_picture: string | null
+          system_prompt: string | null
+          traits: Json | null
+          twitter_handle: string | null
+        }
+        Insert: {
+          agent_type: string
+          background?: string | null
+          created_at?: string | null
+          created_by?: number | null
+          description?: string | null
+          handle: string
+          id?: string
+          is_public?: boolean | null
+          name: string
+          profile_picture?: string | null
+          system_prompt?: string | null
+          traits?: Json | null
+          twitter_handle?: string | null
+        }
+        Update: {
+          agent_type?: string
+          background?: string | null
+          created_at?: string | null
+          created_by?: number | null
+          description?: string | null
+          handle?: string
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          profile_picture?: string | null
+          system_prompt?: string | null
+          traits?: Json | null
+          twitter_handle?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_chain_general_agents_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "agent_chain_end_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_chain_saved_tweets: {
         Row: {
           content: string

@@ -108,3 +108,9 @@ dist
 .cursorrules.md
 
 CLEANUP.md
+SUPABASE_TEST.md
+SUPABASE_SETUP.md
+
+scripts/test-general-agents.js
+scripts/check-supabase.js
+scripts/create-general-agents-table.sql

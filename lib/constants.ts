@@ -10,7 +10,6 @@ export const categories = [
     { id: 'blockchainFounder', name: 'Blockchain Founder Agents', icon: '👨‍💻' },
     { id: 'cartoonHeroes', name: 'Cartoon Heroes Agents', icon: '🎨' },
     { id: 'superhero', name: 'Superhero Agents', icon: '🦸‍♂️' },
-    { id: 'netflixShows', name: 'Netflix TV Show Agents', icon: '📺' },
 ];
 
 
@@ -60,7 +59,7 @@ export const agents: Agent[] = [
         chains: ['ETH', 'BASE', 'Solana'],
         version: '1.0.0',
         score: 4.8,
-        imageUrl: '/avatars/1.png',
+        imageUrl: '',
         contractAddress: '0xelon1',
         twitter: '@elonmusk',
         stats: {
@@ -78,7 +77,7 @@ export const agents: Agent[] = [
         chains: ['ETH', 'Optimism', 'Arbitrum'],
         version: '1.0.0',
         score: 4.9,
-        imageUrl: '/avatars/2.png',
+        imageUrl: '',
         contractAddress: '0xvitalik1',
         twitter: '@vitalikbuterin',
         stats: {
@@ -97,7 +96,7 @@ export const agents: Agent[] = [
         chains: ['ETH', 'Polygon'],
         version: '1.0.0',
         score: 4.6,
-        imageUrl: '/avatars/3.png',
+        imageUrl: '',
         contractAddress: '0xsherlock1',
         stats: {
             users: 7200,
@@ -114,7 +113,7 @@ export const agents: Agent[] = [
         chains: ['ETH', 'Avalanche', 'Solana'],
         version: '1.0.0',
         score: 4.7,
-        imageUrl: '/avatars/4.png',
+        imageUrl: '',
         contractAddress: '0xstark1',
         stats: {
             users: 8500,
@@ -122,59 +121,6 @@ export const agents: Agent[] = [
             volume: 2900000,
         },
         features: ['Tech Innovation', 'Strategic Planning', 'Witty Responses'],
-    },
-    // Trading agents
-    {
-        id: 'trading-master',
-        name: 'TradeMaster Pro',
-        description: 'Advanced trading bot with ML-powered market analysis',
-        category: 'Trading',
-        chains: ['ETH', 'BASE', 'MATIC'],
-        version: '2.1.0',
-        score: 4.8,
-        imageUrl: '/avatars/5.png',
-        contractAddress: '0x123...',
-        stats: {
-            users: 15000,
-            transactions: 1200000,
-            volume: 25000000,
-        },
-        features: ['Market Analysis', 'Automated Trading', 'Risk Management'],
-    },
-    {
-        id: 'trading-crypto',
-        name: 'CryptoTrader AI',
-        description: 'Specialized in cryptocurrency trading with real-time market insights',
-        category: 'Trading',
-        chains: ['ETH', 'Solana', 'Avalanche'],
-        version: '1.8.0',
-        score: 4.5,
-        imageUrl: '/avatars/6.png',
-        contractAddress: '0xcrypto1',
-        stats: {
-            users: 11000,
-            transactions: 950000,
-            volume: 18000000,
-        },
-        features: ['Crypto Analysis', 'Trend Detection', 'Portfolio Management'],
-    },
-    // Social agents
-    {
-        id: 'social-master',
-        name: 'SocialMaster',
-        description: 'Social media management agent with AI-driven content creation',
-        category: 'Social',
-        chains: ['ETH', 'BSC', 'Polygon'],
-        version: '1.5.3',
-        score: 4.5,
-        imageUrl: '/avatars/7.png',
-        contractAddress: '0x456...',
-        stats: {
-            users: 10000,
-            transactions: 800000,
-            volume: 10000000,
-        },
-        features: ['Content Creation', 'Audience Engagement', 'Trend Analysis'],
     },
     // Political leader agents
     {
@@ -185,7 +131,7 @@ export const agents: Agent[] = [
         chains: ['ETH', 'BASE'],
         version: '1.0.0',
         score: 4.9,
-        imageUrl: '/avatars/8.png',
+        imageUrl: '',
         contractAddress: '0xlincoln1',
         stats: {
             users: 6800,
@@ -198,19 +144,19 @@ export const agents: Agent[] = [
 
 // opensea NFT collection URL:
 export const OPENSEA_NFT_COLLECTION_URL =
-    "https://testnets.opensea.io/collection/smolsmolnftscollectionteessst-1";
+    "https://testnets.opensea.io/collection/0x1B4AcaBA13f8B3B858c0796A7d62FC35A5ED3BA5";
 
 // * deployer wallet address:
 export const DEPLOYER_WALLET_ADDRESS =
-    "0x6154CCc7ef29D01A30AA8f51afAB635Ae32d581b";
+    "0x1B4AcaBA13f8B3B858c0796A7d62FC35A5ED3BA5";
 
-// * ERC20 token contract address:
+// * ERC20 token contract address on aurora testnet:
 export const ERC20_TOKEN_CONTRACT_ADDRESS =
-    "0xd88E46AfC2C43A584DFb0836B098778dc0dF2e7F";
+    "0x419cFe85e77a0A26B9989059057318F59764F7C5";
 
 // * NFT contract address:
 export const NFT_CONTRACT_ADDRESS =
-    "0xf8a34aC797A4982631D1d54E6B70ae4feeC14230";
+    "0x1B4AcaBA13f8B3B858c0796A7d62FC35A5ED3BA5";
 
 // * profile generation:
 export const LIFE_GOALS_DEFAULT_COUNT = 6;

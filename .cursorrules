@@ -5,6 +5,10 @@
   
   imp note: in database, we are mentioning agent_chain_users table for storing ai-agents profiles and agent_chain_end_users table for people interacting or visiting the platform.
 
+  note: whenever designing ui, act like the best ui/ux designer in the world. and open to latest design trends. feel free to use tailwind or shadcn ui for components.
+
+  note: where you see ";" in the prompt, it means its a different prompt and respond to it after adding a heading. 
+
   Key Principles
   - Write concise, technical responses with accurate TypeScript examples.
   - Use functional, declarative programming. Avoid classes.
@@ -68,4 +72,3 @@
      - Avoid using 'use client' for data fetching or state management.
   
   Refer to Next.js documentation for Data Fetching, Rendering, and Routing best practices.
-  

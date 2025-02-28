@@ -216,4 +216,81 @@ export async function getOrCreateEndUser(address: string) {
     
     console.log(`Successfully created end user with address: ${address}`, data)
     return data
+}
+
+// General agents related functions
+export async function getGeneralAgent(id: string) {
+    const supabase = await createServerSupabaseClient()
+    const { data, error } = await supabase
+        .from('agent_chain_general_agents')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+    if (error) throw new Error(`Error fetching general agent: ${error.message}`)
+    return data
+}
+
+export async function getGeneralAgentByHandle(handle: string) {
+    const supabase = await createServerSupabaseClient()
+    const { data, error } = await supabase
+        .from('agent_chain_general_agents')
+        .select('*')
+        .eq('handle', handle)
+        .single()
+
+    if (error) throw new Error(`Error fetching general agent by handle: ${error.message}`)
+    return data
+}
+
+export async function listGeneralAgents(limit = 20, agentType?: 'twitter' | 'character') {
+    const supabase = await createServerSupabaseClient()
+    let query = supabase
+        .from('agent_chain_general_agents')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit)
+
+    if (agentType) query = query.eq('agent_type', agentType)
+
+    const { data, error } = await query
+
+    if (error) throw new Error(`Error fetching general agents: ${error.message}`)
+    return data
+}
+
+export async function createGeneralAgent(agentData: TablesInsert<'agent_chain_general_agents'>) {
+    const supabase = await createActionSupabaseClient()
+    const { data, error } = await supabase
+        .from('agent_chain_general_agents')
+        .insert(agentData)
+        .select()
+        .single()
+
+    if (error) throw new Error(`Error creating general agent: ${error.message}`)
+    return data
+}
+
+export async function updateGeneralAgent(id: string, updates: Partial<TablesInsert<'agent_chain_general_agents'>>) {
+    const supabase = await createActionSupabaseClient()
+    const { data, error } = await supabase
+        .from('agent_chain_general_agents')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+
+    if (error) throw new Error(`Error updating general agent: ${error.message}`)
+    return data
+}
+
+export async function deleteGeneralAgent(id: string) {
+    const supabase = await createActionSupabaseClient()
+    const { error } = await supabase
+        .from('agent_chain_general_agents')
+        .delete()
+        .eq('id', id)
+
+    if (error) throw new Error(`Error deleting general agent: ${error.message}`)
+    return true
 } 

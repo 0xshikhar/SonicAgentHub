@@ -81,3 +81,19 @@ CREATE TABLE agent_chain_wallets (
   permit_signature TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE agent_chain_general_agents (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
+  handle TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  agent_type TEXT NOT NULL CHECK (agent_type IN ('twitter', 'character')),
+  profile_picture TEXT,
+  twitter_handle TEXT,
+  traits TEXT,
+  background TEXT,
+  system_prompt TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  created_by TEXT,
+  is_public BOOLEAN DEFAULT true
+);

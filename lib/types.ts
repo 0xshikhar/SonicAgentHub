@@ -21,6 +21,22 @@ export interface Agent {
     reviews?: AgentReview[];
 }
 
+export interface GeneralAgent {
+    id: string;
+    handle: string;
+    name: string;
+    description: string;
+    agentType: 'twitter' | 'character';
+    profilePicture?: string;
+    twitterHandle?: string;
+    traits?: any;
+    background?: string;
+    systemPrompt: string;
+    createdAt: string;
+    createdBy?: number;
+    isPublic: boolean;
+}
+
 export interface AgentMetric {
     label: string;
     value: string;

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { categories } from '@/lib/constants';
+import { categories, agents as staticAgents } from '@/lib/constants';
 import LoadingState from '@/components/LoadingState'; 
-import { AgentNavigation } from '@/components/AgentNavigation';
 import axios from 'axios';
 import { Agent } from '@/lib/types';
 import { showToast } from '@/lib/toast';
@@ -21,17 +20,21 @@ export default function AgentsPage() {
       try {
         setIsLoading(true);
         const response = await axios.post('/api/agent-training', {
-          action: 'getAgents'
+          action: 'getGeneralAgents'
         });
         
         if (response.data.success) {
-          setAgents(response.data.data);
+          // Combine static agents with API agents
+          const apiAgents = response.data.data;
+          setAgents([...staticAgents, ...apiAgents]);
         } else {
           throw new Error(response.data.error || 'Failed to fetch agents');
         }
       } catch (error) {
         console.error('Error fetching agents:', error);
-        showToast.error('Failed to load agents');
+        showToast.error('Failed to load agents from API, using static agents instead');
+        // Fallback to static agents
+        setAgents(staticAgents);
       } finally {
         setIsLoading(false);
       }
@@ -48,29 +51,62 @@ export default function AgentsPage() {
   });
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#0A0E1A]">
       {/* Header with search and filters */}
       <div className="relative border-b border-white/5">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 via-purple-500/5 to-transparent"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-4xl font-bold text-white mb-8">
-            Discover AI Agents
-          </h1>
-
-          {/* Navigation */}
-          <AgentNavigation />
+        {/* Cosmic Background with Stars */}
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-600/10 via-purple-600/5 to-transparent overflow-hidden">
+          <div className="absolute inset-0 opacity-30">
+            {/* Simulated stars using pseudo-elements in the background */}
+            <div className="absolute h-1 w-1 rounded-full bg-white top-[10%] left-[15%] animate-pulse"></div>
+            <div className="absolute h-1 w-1 rounded-full bg-white top-[25%] left-[40%] animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+            <div className="absolute h-1 w-1 rounded-full bg-white top-[15%] left-[65%] animate-pulse" style={{ animationDelay: '1.2s' }}></div>
+            <div className="absolute h-1 w-1 rounded-full bg-white top-[45%] left-[85%] animate-pulse" style={{ animationDelay: '0.7s' }}></div>
+            <div className="absolute h-1 w-1 rounded-full bg-white top-[65%] left-[25%] animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+            <div className="absolute h-2 w-2 rounded-full bg-blue-400 top-[30%] left-[75%] animate-pulse" style={{ animationDelay: '0.3s' }}></div>
+            <div className="absolute h-2 w-2 rounded-full bg-purple-400 top-[70%] left-[60%] animate-pulse" style={{ animationDelay: '1.8s' }}></div>
+          </div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h1 className="text-5xl font-bold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400">
+                Discover AI Agents
+              </h1>
+              
+              <p className="text-gray-300 text-lg mb-8 max-w-2xl">
+                Explore our collection of AI agents powered by advanced machine learning. 
+                Chat, trade, and collaborate with specialized digital entities.
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => router.push('/agents/create')}
+              className="relative group"
+            >
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl opacity-75 blur-sm group-hover:opacity-100 transition duration-300"></div>
+              <div className="relative flex items-center space-x-2 bg-[#131B31] text-white px-5 py-3 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span className="font-medium">Create Agent</span>
+              </div>
+            </button>
+          </div>
 
           {/* Search Bar */}
-          <div className="relative max-w-xl mb-8">
+          <div className="relative max-w-xl mb-10 mt-8 group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl opacity-75 blur-sm group-hover:opacity-100 transition duration-300"></div>
             <input
               type="text"
               placeholder="Search agents..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#131B31] text-white border border-white/10 rounded-xl px-5 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="relative w-full bg-[#131B31] text-white border border-white/10 rounded-xl px-5 py-4 pl-12 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             />
             <svg
-              className="absolute left-4 top-3.5 h-5 w-5 text-gray-400"
+              className="absolute left-4 top-4 h-6 w-6 text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -85,18 +121,18 @@ export default function AgentsPage() {
           </div>
 
           {/* Category Filters */}
-          <div className="flex space-x-4 mb-6 pb-2 overflow-x-auto">
+          <div className="flex space-x-4 mb-8 pb-2 overflow-x-auto scrollbar-hide">
             {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 whitespace-nowrap ${
+                className={`flex items-center px-5 py-3 rounded-xl transition-all duration-300 whitespace-nowrap ${
                   selectedCategory === category.id
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
-                    : 'bg-[#131B31] text-gray-400 hover:text-white hover:bg-[#1a2234]'
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/20'
+                    : 'bg-[#131B31] text-gray-400 hover:text-white hover:bg-[#1a2234] hover:shadow-md hover:shadow-blue-500/10'
                 }`}
               >
-                {category.icon && <span className="mr-2">{category.icon}</span>}
+                {category.icon && <span className="mr-2 text-lg">{category.icon}</span>}
                 {category.name}
               </button>
             ))}
@@ -105,35 +141,40 @@ export default function AgentsPage() {
       </div>
 
       {/* Agents Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {isLoading ? (
           <div className="flex justify-center items-center py-20">
             <LoadingState />
           </div>
         ) : filteredAgents.length === 0 ? (
           <div className="text-center py-20">
-            <h3 className="text-xl font-medium text-white mb-2">No agents found</h3>
-            <p className="text-gray-400">
-              Try adjusting your search or filter criteria, or create a new agent.
+            <h3 className="text-2xl font-medium text-white mb-4">No agents found</h3>
+            <p className="text-gray-400 max-w-md mx-auto">
+              Try adjusting your search or filter criteria, or create a new agent to expand our ecosystem.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredAgents.map((agent) => (
               <div
                 key={agent.id}
-                className="group relative bg-gradient-to-b from-[#0B1628] via-[#0D1425] to-[#0B1628] rounded-2xl overflow-hidden cursor-pointer backdrop-blur-sm border border-white/[0.05]"
-                onClick={() => router.push(`/agents/chat?handle=${agent.id}`)}
+                className="group relative bg-gradient-to-b from-[#0B1628] via-[#0D1425] to-[#0B1628] rounded-2xl overflow-hidden cursor-pointer backdrop-blur-sm border border-white/[0.05] hover:border-white/[0.1] transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10"
+                onClick={() => router.push(`/agents/${agent.id}`)}
               >
-                {/* Gradient Border Effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                {/* Hover Glow Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                
+                {/* Animated Corner Accent */}
+                <div className="absolute top-0 right-0 w-20 h-20 overflow-hidden">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-blue-500 to-purple-600 rotate-45 transform origin-top-right group-hover:scale-110 transition-transform duration-300"></div>
+                </div>
 
                 {/* Card Content */}
                 <div className="relative p-6">
                   {/* Header */}
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center">
-                      <div className="relative w-12 h-12 rounded-xl overflow-hidden mr-4">
+                      <div className="relative w-16 h-16 rounded-xl overflow-hidden mr-4 border-2 border-white/10 group-hover:border-white/20 transition-all duration-300">
                         {agent.imageUrl ? (
                           <Image
                             src={agent.imageUrl}
@@ -151,7 +192,7 @@ export default function AgentsPage() {
                         )}
                       </div>
                       <div>
-                        <h3 className="text-xl font-medium text-white">{agent.name}</h3>
+                        <h3 className="text-2xl font-bold text-white group-hover:text-blue-400 transition-colors duration-300">{agent.name}</h3>
                         <div className="flex items-center mt-1">
                           <div className="flex items-center text-yellow-400">
                             <span className="text-sm mr-1">⭐</span>
@@ -165,27 +206,27 @@ export default function AgentsPage() {
                   </div>
 
                   {/* Description */}
-                  <div className="text-gray-400 text-sm mb-6 line-clamp-2">
+                  <div className="text-gray-300 text-sm mb-6 line-clamp-2 group-hover:text-gray-200 transition-colors duration-300">
                     {agent.description}
                   </div>
 
                   {/* Stats Grid */}
                   <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="bg-[#0A1220] rounded-xl p-3 text-center backdrop-blur-sm">
-                      <div className="text-sm text-gray-400">Users</div>
-                      <div className="text-white font-medium mt-1">
+                    <div className="bg-[#0A1220] rounded-xl p-3 text-center backdrop-blur-sm border border-white/5 group-hover:border-white/10 transition-all duration-300">
+                      <div className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Users</div>
+                      <div className="text-white font-medium mt-1 group-hover:text-blue-400 transition-colors duration-300">
                         {agent.stats.users.toLocaleString()}
                       </div>
                     </div>
-                    <div className="bg-[#0A1220] rounded-xl p-3 text-center backdrop-blur-sm">
-                      <div className="text-sm text-gray-400">Txns</div>
-                      <div className="text-white font-medium mt-1">
+                    <div className="bg-[#0A1220] rounded-xl p-3 text-center backdrop-blur-sm border border-white/5 group-hover:border-white/10 transition-all duration-300">
+                      <div className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Txns</div>
+                      <div className="text-white font-medium mt-1 group-hover:text-blue-400 transition-colors duration-300">
                         {agent.stats.transactions.toLocaleString()}
                       </div>
                     </div>
-                    <div className="bg-[#0A1220] rounded-xl p-3 text-center backdrop-blur-sm">
-                      <div className="text-sm text-gray-400">Volume</div>
-                      <div className="text-white font-medium mt-1">
+                    <div className="bg-[#0A1220] rounded-xl p-3 text-center backdrop-blur-sm border border-white/5 group-hover:border-white/10 transition-all duration-300">
+                      <div className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Volume</div>
+                      <div className="text-white font-medium mt-1 group-hover:text-blue-400 transition-colors duration-300">
                         ${(agent.stats.volume / 1000000).toFixed(1)}M
                       </div>
                     </div>
@@ -194,14 +235,24 @@ export default function AgentsPage() {
                   {/* Footer */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <span className="px-3 py-1 text-sm bg-[#131B31] text-blue-400 rounded-lg">
+                      <span className="px-3 py-1.5 text-sm bg-[#131B31] text-blue-400 rounded-lg border border-blue-500/20 group-hover:border-blue-500/40 transition-all duration-300">
                         {agent.category}
                       </span>
                       {agent.twitter && (
-                        <span className="px-3 py-1 text-sm bg-[#131B31] text-blue-400 rounded-lg">
+                        <span className="px-3 py-1.5 text-sm bg-[#131B31] text-purple-400 rounded-lg border border-purple-500/20 group-hover:border-purple-500/40 transition-all duration-300">
                           Twitter
                         </span>
                       )}
+                    </div>
+                    
+                    {/* Chat Button */}
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <button className="flex items-center space-x-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <span>Chat</span>
+                      </button>
                     </div>
                   </div>
                 </div>

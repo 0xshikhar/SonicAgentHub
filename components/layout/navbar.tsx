@@ -15,6 +15,7 @@ const navigation = [
     { name: 'Agents', href: '/agents' },
     { name: 'Tweets', href: '/tweets' },
     { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Main', href: '/main' }
 ];
 
 export function Navbar() {
@@ -87,9 +88,9 @@ export function Navbar() {
                                 key={item.name}
                                 href={item.href}
                                 className={`text-base font-medium transition-colors duration-200 ${(router.pathname === item.href ||
-                                        (item.href.startsWith('/profile') && router.pathname.startsWith('/profile')))
-                                        ? 'text-white'
-                                        : 'text-gray-300 hover:text-white'
+                                    (item.href.startsWith('/profile') && router.pathname.startsWith('/profile')))
+                                    ? 'text-white'
+                                    : 'text-gray-300 hover:text-white'
                                     }`}
                             >
                                 {item.name}
@@ -141,9 +142,9 @@ export function Navbar() {
                             key={item.name}
                             href={item.href}
                             className={`block px-3 py-2 rounded-lg text-base font-medium ${(router.pathname === item.href ||
-                                    (item.href.startsWith('/profile') && router.pathname.startsWith('/profile')))
-                                    ? 'text-white bg-[#131B31]'
-                                    : 'text-gray-300 hover:text-white hover:bg-[#131B31]'
+                                (item.href.startsWith('/profile') && router.pathname.startsWith('/profile')))
+                                ? 'text-white bg-[#131B31]'
+                                : 'text-gray-300 hover:text-white hover:bg-[#131B31]'
                                 }`}
                             onClick={() => setIsMobileMenuOpen(false)}
                         >

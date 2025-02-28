@@ -4,7 +4,9 @@ import { fetchTwitterProfile, generateTwitterSystemPrompt, generateCharacterSyst
 import { createAgentFromTwitterProfile, createAgentFromCharacterProfile, convertMainAgentToAgent, convertAgentToMainAgent } from "@/lib/agent-utils";
 import { agents as staticAgents } from "@/lib/constants";
 import { postErrorToDiscord } from "@/lib/discord";
-import { Agent } from "@/lib/types";
+import { Agent, GeneralAgent } from "@/lib/types";
+import { createGeneralAgent, getGeneralAgent, listGeneralAgents } from "@/lib/supabase-utils";
+import type { Json } from "@/types/supabase";
 
 interface SuccessResponse {
   success: true;
@@ -51,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
-  const { action } = req.body;
+  const { action, agentId } = req.body;
 
   try {
     switch (action) {
@@ -63,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         }
         
         try {
-          // Try to use the real service first
+          // Try to use the real service first for onchain agents
           const dbUser = await createRealTwitterAgent({ twitterHandle });
           
           // Convert to Agent format
@@ -78,28 +80,62 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             message: `Agent created successfully from Twitter profile: ${twitterHandle}`
           });
         } catch (error) {
-          // Fall back to mock implementation
-          console.log("Falling back to mock implementation for Twitter agent creation");
+          // Fall back to creating a general agent
+          console.log("Creating general agent for Twitter profile");
           
-          // Fetch Twitter profile data
-          const twitterData = await fetchTwitterProfile(twitterHandle);
-          
-          // Create agent
-          const agent = createAgentFromTwitterProfile({
-            handle: twitterData.handle,
-            name: twitterData.name,
-            description: twitterData.description,
-            profileImage: twitterData.profileImage || "/logos/twitter.png"
-          });
-          
-          // Store in memory
-          dynamicAgents.push(agent);
-          
-          return res.status(200).json({ 
-            success: true, 
-            data: agent,
-            message: `Agent created successfully from Twitter profile: ${twitterHandle}`
-          });
+          try {
+            // Fetch Twitter profile data
+            const twitterData = await fetchTwitterProfile(twitterHandle);
+            
+            // Generate system prompt
+            const systemPrompt = generateTwitterSystemPrompt(twitterData);
+            
+            console.log("Twitter data fetched:", twitterData);
+            console.log("System prompt generated:", systemPrompt);
+            
+            // Create general agent
+            const generalAgentData = {
+              handle: twitterData.handle,
+              name: twitterData.name,
+              description: twitterData.description,
+              agent_type: 'twitter',
+              profile_picture: twitterData.profileImage,
+              twitter_handle: twitterData.handle,
+              system_prompt: systemPrompt,
+              is_public: true,
+              created_by: req.body.createdBy ? Number(req.body.createdBy) : undefined
+            };
+            
+            console.log("Attempting to create general agent with data:", generalAgentData);
+            
+            const generalAgent = await createGeneralAgent(generalAgentData);
+            
+            console.log("General agent created successfully:", generalAgent);
+            
+            // Convert to Agent format for frontend
+            const agent = createAgentFromTwitterProfile({
+              handle: generalAgent.handle,
+              name: generalAgent.name,
+              description: generalAgent.description || "",
+              profileImage: generalAgent.profile_picture || "/logos/twitter.png"
+            });
+            
+            // Store in memory for current session
+            dynamicAgents.push(agent);
+            
+            return res.status(200).json({ 
+              success: true, 
+              data: agent,
+              message: `Agent created successfully from Twitter profile: ${twitterHandle}`
+            });
+          } catch (innerError: any) {
+            console.error("Error creating general agent:", innerError);
+            await postErrorToDiscord(`Error creating general agent: ${innerError.message || "Unknown error"}`);
+            return res.status(500).json({ 
+              success: false, 
+              error: `Failed to create agent: ${innerError.message || "Unknown error"}` 
+            });
+          }
         }
       }
       
@@ -114,7 +150,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         }
         
         try {
-          // Try to use the real service first
+          // Try to use the real service first for onchain agents
           const dbUser = await createRealCharacterAgent({ 
             handle, 
             name, 
@@ -135,20 +171,50 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             message: `Agent created successfully from character profile: ${name}`
           });
         } catch (error) {
-          // Fall back to mock implementation
-          console.log("Falling back to mock implementation for character agent creation");
+          // Fall back to creating a general agent
+          console.log("Creating general agent for character profile");
           
-          // Create agent
-          const agent = createAgentFromCharacterProfile({
+          // Format traits for storage
+          const traitsArray = Array.isArray(traits) 
+            ? traits 
+            : typeof traits === 'string' 
+              ? traits.split(',').map(t => t.trim())
+              : [];
+          
+          // Generate system prompt
+          const characterData = {
             handle,
             name,
             description,
+            traits: traitsArray,
+            background: background || ""
+          };
+          const systemPrompt = generateCharacterSystemPrompt(characterData);
+          
+          // Create general agent
+          const generalAgent = await createGeneralAgent({
+            handle,
+            name,
+            description,
+            agent_type: 'character',
+            traits: traitsArray,
+            background: background || undefined,
+            system_prompt: systemPrompt,
+            is_public: true,
+            created_by: req.body.createdBy ? Number(req.body.createdBy) : undefined
+          });
+          
+          // Convert to Agent format for frontend
+          const agent = createAgentFromCharacterProfile({
+            handle: generalAgent.handle,
+            name: generalAgent.name,
+            description: generalAgent.description || "",
             profileImage: `/avatars/${Math.floor(Math.random() * 10) + 1}.png`,
-            traits: Array.isArray(traits) ? traits : [],
+            traits: traitsArray,
             background: background || ""
           });
           
-          // Store in memory
+          // Store in memory for current session
           dynamicAgents.push(agent);
           
           return res.status(200).json({ 
@@ -157,6 +223,73 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             message: `Agent created successfully from character profile: ${name}`
           });
         }
+      }
+      
+      case "createOnchainAgentRequest": {
+        const { email, walletAddress, agentType, details } = req.body;
+        
+        if (!email || !walletAddress || !agentType || !details) {
+          return res.status(400).json({ 
+            success: false, 
+            error: "Email, wallet address, agent type, and details are required" 
+          });
+        }
+        
+        // Here you would typically store this request in a database
+        // and notify administrators to review it
+        
+        // For now, we'll just return a success message
+        await postErrorToDiscord(`🔵 New onchain agent request: ${email} (${walletAddress}) - Type: ${agentType}`);
+        
+        return res.status(200).json({ 
+          success: true, 
+          data: { email, walletAddress, agentType, details },
+          message: "Your request has been submitted and will be reviewed by our team."
+        });
+      }
+      
+      case "getGeneralAgents": {
+        const { limit, agentType } = req.body;
+        
+        const generalAgents = await listGeneralAgents(
+          limit || 20, 
+          agentType === 'twitter' || agentType === 'character' ? agentType : undefined
+        );
+        
+        // Convert to Agent format for frontend
+        const agents = generalAgents.map(ga => {
+          if (ga.agent_type === 'twitter') {
+            return createAgentFromTwitterProfile({
+              handle: ga.handle,
+              name: ga.name,
+              description: ga.description || "",
+              profileImage: ga.profile_picture || "/logos/twitter.png"
+            });
+          } else {
+            // Handle traits properly based on its type
+            let traitsArray: string[] = [];
+            if (typeof ga.traits === 'string') {
+              traitsArray = ga.traits.split(',').map(t => t.trim());
+            } else if (Array.isArray(ga.traits)) {
+              traitsArray = ga.traits.map(t => String(t));
+            }
+            
+            return createAgentFromCharacterProfile({
+              handle: ga.handle,
+              name: ga.name,
+              description: ga.description || "",
+              profileImage: ga.profile_picture || `/avatars/${Math.floor(Math.random() * 10) + 1}.png`,
+              traits: traitsArray,
+              background: ga.background || ""
+            });
+          }
+        });
+        
+        return res.status(200).json({ 
+          success: true, 
+          data: agents,
+          message: `Retrieved ${agents.length} general agents`
+        });
       }
       
       case "generateResponse": {
@@ -176,66 +309,113 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             prompt, 
             systemInstructions: systemPrompt 
           });
+          
           return res.status(200).json({ 
             success: true, 
             data: { response },
-            message: `Response generated successfully from agent: ${handle}`
+            message: "Response generated successfully"
           });
         } catch (error) {
-          // Fall back to mock implementation
-          console.log("Falling back to mock implementation for response generation");
+          console.log("Falling back to mock response generation");
           
-          const response = await mockGenerateResponse(handle, prompt, systemPrompt || "");
-          return res.status(200).json({ 
-            success: true, 
-            data: { response },
-            message: `Response generated successfully from agent: ${handle}`
-          });
+          try {
+            // Try to get the general agent first
+            const generalAgent = await getGeneralAgent(handle);
+            
+            // Generate a response using the agent's system prompt
+            const response = await mockGenerateResponse(
+              handle,
+              prompt, 
+              generalAgent.system_prompt || systemPrompt || ""
+            );
+            
+            return res.status(200).json({ 
+              success: true, 
+              data: { response },
+              message: "Response generated successfully (mock)"
+            });
+          } catch (innerError) {
+            // If we can't find the general agent, just use the provided system prompt
+            const response = await mockGenerateResponse(
+              handle,
+              prompt, 
+              systemPrompt || ""
+            );
+            
+            return res.status(200).json({ 
+              success: true, 
+              data: { response },
+              message: "Response generated successfully (mock, fallback)"
+            });
+          }
         }
-      }
-      
-      case "getAgents": {
-        // Combine static agents from constants and dynamically created agents
-        const allAgents = [...staticAgents, ...dynamicAgents];
-        
-        // Remove duplicates based on id
-        const uniqueAgents = allAgents.filter((agent, index, self) => 
-          index === self.findIndex(a => a.id === agent.id)
-        );
-        
-        return res.status(200).json({ 
-          success: true, 
-          data: uniqueAgents,
-          message: `Retrieved ${uniqueAgents.length} agents`
-        });
       }
       
       case "getAgent": {
-        const { id } = req.body;
-        
-        if (!id) {
-          return res.status(400).json({ 
-            success: false, 
-            error: "Agent ID is required" 
+        // First check if it's a static agent
+        const staticAgent = staticAgents.find(a => a.id === agentId);
+        if (staticAgent) {
+          return res.status(200).json({ 
+            success: true, 
+            data: staticAgent,
+            message: `Retrieved static agent: ${staticAgent.name}`
           });
         }
         
-        // Search in both static and dynamic agents
-        const allAgents = [...staticAgents, ...dynamicAgents];
-        const agent = allAgents.find(a => a.id === id);
+        // Then check if it's a dynamic agent
+        const dynamicAgent = dynamicAgents.find(a => a.id === agentId);
+        if (dynamicAgent) {
+          return res.status(200).json({ 
+            success: true, 
+            data: dynamicAgent,
+            message: `Retrieved dynamic agent: ${dynamicAgent.name}`
+          });
+        }
         
-        if (!agent) {
+        // Finally, try to get it from the database
+        try {
+          const generalAgent = await getGeneralAgent(agentId);
+          
+          // Convert to Agent format
+          let agent: Agent;
+          
+          if (generalAgent.agent_type === 'twitter') {
+            agent = createAgentFromTwitterProfile({
+              handle: generalAgent.handle,
+              name: generalAgent.name,
+              description: generalAgent.description || "",
+              profileImage: generalAgent.profile_picture || "/logos/twitter.png"
+            });
+          } else {
+            // Handle traits properly based on its type
+            let traitsArray: string[] = [];
+            if (typeof generalAgent.traits === 'string') {
+              traitsArray = generalAgent.traits.split(',').map(t => t.trim());
+            } else if (Array.isArray(generalAgent.traits)) {
+              traitsArray = generalAgent.traits.map(t => String(t));
+            }
+            
+            agent = createAgentFromCharacterProfile({
+              handle: generalAgent.handle,
+              name: generalAgent.name,
+              description: generalAgent.description || "",
+              profileImage: generalAgent.profile_picture || `/avatars/${Math.floor(Math.random() * 10) + 1}.png`,
+              traits: traitsArray,
+              background: generalAgent.background || ""
+            });
+          }
+          
+          return res.status(200).json({ 
+            success: true, 
+            data: agent,
+            message: `Retrieved general agent: ${agent.name}`
+          });
+        } catch (error) {
           return res.status(404).json({ 
             success: false, 
-            error: `Agent with ID ${id} not found` 
+            error: `Agent not found: ${agentId}` 
           });
         }
-        
-        return res.status(200).json({ 
-          success: true, 
-          data: agent,
-          message: `Retrieved agent: ${agent.name}`
-        });
       }
       
       default:
@@ -246,10 +426,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
   } catch (error: any) {
     console.error("Error in agent-training API:", error);
-    await postErrorToDiscord(`🔴 Error in agent-training API: ${error.message || "An unexpected error occurred"}`);
     return res.status(500).json({ 
       success: false, 
-      error: error.message || "An unexpected error occurred" 
+      error: error.message || "An unknown error occurred" 
     });
   }
 } 
