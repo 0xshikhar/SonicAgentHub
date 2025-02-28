@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useRouter } from 'next/router'
 import { isWalletConnected, setWalletConnected } from '../auth'
+import { useWalletAuthContext } from '@/components/WalletAuthProvider'
 
 interface UseWalletAuthOptions {
     /**
@@ -23,11 +24,9 @@ export function useWalletAuth(options: UseWalletAuthOptions = {}) {
     const router = useRouter()
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(true)
+    const { isProcessingUser, userStored, error } = useWalletAuthContext()
 
     useEffect(() => {
-        // Update the wallet connection state in the cookie
-        setWalletConnected(isConnected)
-
         // Check if the wallet is connected
         const walletConnected = isWalletConnected()
         setIsAuthenticated(walletConnected)
@@ -41,6 +40,8 @@ export function useWalletAuth(options: UseWalletAuthOptions = {}) {
 
     return {
         isAuthenticated,
-        isLoading
+        isLoading,
+        isProcessing: isProcessingUser,
+        error
     }
 } 

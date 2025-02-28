@@ -1,10 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import Image from 'next/image';
-import HeroAnimation from './HeroAnimation'; // Import the animation component
-import AIAgentModel from './AIAgentModel'; // Import the 3D model component
-import { FeatureIcon } from './FeatureIcons';
+import HeroAnimation from '@/components/HeroAnimation'; // Import the animation component
+import AIAgentModel from '@/components/AIAgentModel'; // Import the 3D model component
+import { FeatureIcon } from '@/components/FeatureIcons';
 
 const HeroSection = () => {
     const router = useRouter();
@@ -21,7 +20,15 @@ const HeroSection = () => {
             </div>
 
             {/* Grid overlay effect */}
-            <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10"></div>
+            {/* <div
+                className="absolute inset-0 opacity-10"
+                style={{
+                    backgroundColor: '#1b0836',
+                    backgroundImage: "url('data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%233d1978\' fill-opacity=\'1\' fill-rule=\'evenodd\'%3E%3Ccircle cx=\'3\' cy=\'3\' r=\'3\'/%3E%3Ccircle cx=\'13\' cy=\'13\' r=\'3\'/%3E%3C/g%3E%3C/svg%3E')",
+                    backgroundSize: '20px 20px', // Adjust size as needed
+                    backgroundRepeat: 'repeat' // Ensure the pattern repeats
+                }}
+            ></div> */}
 
             {/* Main content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative pt-16 pb-24 sm:pt-20 sm:pb-32">

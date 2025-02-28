@@ -4,6 +4,8 @@ import { FetchedTweet } from "../types";
 import { createUser, getUser, updateUser } from "../supabase-utils";
 import { postErrorToDiscord } from "../discord";
 import { cleanHandle, goodTwitterImage } from "../strings";
+import axios from 'axios'
+import { Agent } from '@/lib/types'
 
 interface AgentTrainingOptions {
   twitterHandle?: string;
@@ -14,6 +16,82 @@ interface AgentTrainingOptions {
     background: string;
   };
   customInstructions?: string;
+}
+
+interface TwitterData {
+  handle: string
+  name: string
+  description: string
+  profileImage?: string
+  followers: number
+  following: number
+  tweets: string[]
+}
+
+interface CharacterData {
+  handle: string
+  name: string
+  description: string
+  traits: string[]
+  background?: string
+}
+
+/**
+ * Fetches Twitter profile data for a given handle
+ */
+async function fetchTwitterProfile(handle: string): Promise<TwitterData> {
+  // In a real application, this would call the Twitter API
+  // For demo purposes, we'll return mock data
+  
+  // Remove @ if present
+  const cleanedHandle = handle.startsWith('@') ? handle.substring(1) : handle
+  
+  // Mock data for demo
+  return {
+    handle: cleanedHandle,
+    name: `${cleanedHandle} (AI Agent)`,
+    description: `This is an AI agent based on the Twitter profile of ${cleanedHandle}. The agent analyzes tweets and mimics the communication style.`,
+    profileImage: `/avatars/${Math.floor(Math.random() * 10) + 1}.png`,
+    followers: Math.floor(Math.random() * 10000),
+    following: Math.floor(Math.random() * 1000),
+    tweets: [
+      "Just shared my thoughts on the latest market trends! #Finance #Tech",
+      "Excited to announce our new partnership with a leading blockchain company!",
+      "Working on something big. Stay tuned for updates!",
+      "Great meeting with the team today. Innovation is at our core.",
+      "What are your thoughts on the future of decentralized finance?"
+    ]
+  }
+}
+
+/**
+ * Generates a system prompt for a Twitter-based agent
+ */
+function generateTwitterSystemPrompt(twitterData: TwitterData): string {
+  return `You are an AI agent based on the Twitter profile of ${twitterData.name} (@${twitterData.handle}).
+  
+Bio: ${twitterData.description}
+
+You have ${twitterData.followers} followers and are following ${twitterData.following} accounts.
+
+Recent tweets:
+${twitterData.tweets.map(tweet => `- "${tweet}"`).join('\n')}
+
+When responding to messages, maintain the communication style, knowledge, and personality that would be consistent with this Twitter profile. Be helpful, informative, and engaging while staying in character.`
+}
+
+/**
+ * Generates a system prompt for a character-based agent
+ */
+function generateCharacterSystemPrompt(characterData: CharacterData): string {
+  return `You are an AI agent based on the character: ${characterData.name}.
+  
+Description: ${characterData.description}
+
+${characterData.traits.length > 0 ? `Personality traits: ${characterData.traits.join(', ')}` : ''}
+${characterData.background ? `\nBackground: ${characterData.background}` : ''}
+
+When responding to messages, maintain the personality, knowledge, and communication style that would be consistent with this character. Be helpful, informative, and engaging while staying in character.`
 }
 
 /**

@@ -164,4 +164,56 @@ export async function createWallet(walletData: TablesInsert<'agent_chain_wallets
 
     if (error) throw new Error(`Error creating wallet: ${error.message}`)
     return data
+}
+
+// End user related functions
+export async function getOrCreateEndUser(address: string) {
+    // Use the default supabase client for client-side calls
+    // This avoids the "cookies was called outside a request scope" error
+    const supabase = typeof window !== 'undefined' 
+        ? await import('./supabase').then(mod => mod.default) 
+        : await createActionSupabaseClient()
+    
+    console.log(`Attempting to get or create end user with address: ${address}`)
+    
+    // First check if end user exists
+    const { data: existingUser, error: fetchError } = await supabase
+        .from('agent_chain_end_users')
+        .select('*')
+        .eq('address', address)
+        .single()
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+        // PGRST116 is the error code for "no rows returned"
+        console.error(`Error fetching end user: ${fetchError.message}`, fetchError)
+        throw new Error(`Error fetching end user: ${fetchError.message}`)
+    }
+
+    // If user exists, return it
+    if (existingUser) {
+        console.log(`Found existing end user with address: ${address}`, existingUser)
+        return existingUser
+    }
+
+    console.log(`Creating new end user with address: ${address}`)
+    
+    // If not, create a new end user
+    const userData: TablesInsert<'agent_chain_end_users'> = {
+        address,
+        agentCreated: false,
+    }
+
+    const { data, error } = await supabase
+        .from('agent_chain_end_users')
+        .insert(userData)
+        .select()
+        .single()
+
+    if (error) {
+        console.error(`Error creating end user: ${error.message}`, error)
+        throw new Error(`Error creating end user: ${error.message}`)
+    }
+    
+    console.log(`Successfully created end user with address: ${address}`, data)
+    return data
 } 

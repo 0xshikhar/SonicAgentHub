@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import Navbar from './navbar';  
+import { Navbar } from '@/components/layout/navbar';
 import Link from 'next/link';
 import Image from 'next/image';
 import DebugInfo from './DebugInfo';

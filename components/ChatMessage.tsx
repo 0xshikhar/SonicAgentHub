@@ -52,7 +52,7 @@ function FormattedContent({ content }: FormattedContentProps) {
                     return (
                         <div key={`list-${lineIndex}`} className="flex items-start mb-1">
                             <span className="mr-2 font-medium">{number}.</span>
-                            <div className="flex-1">{formatBoldText(text)}</div>
+                            <div className="flex-1">{formatBoldText(text || '')}</div> 
                         </div>
                     );
                 }
@@ -63,13 +63,13 @@ function FormattedContent({ content }: FormattedContentProps) {
                     return (
                         <div key={`bullet-${lineIndex}`} className="flex items-start mb-1">
                             <span className="mr-2">•</span>
-                            <div className="flex-1">{formatBoldText(text)}</div>
+                            <div className="flex-1">{formatBoldText(text || '')}</div>
                         </div>
                     );
                 }
 
                 // Regular paragraph
-                return <p key={`p-${lineIndex}`} className="mb-1">{formatBoldText(line)}</p>;
+                return <p key={`p-${lineIndex}`} className="mb-1">{formatBoldText(line || '')}</p>;
             })}
         </div>
     );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -46,6 +47,7 @@ type TwitterFormValues = z.infer<typeof twitterFormSchema>;
 type CharacterFormValues = z.infer<typeof characterFormSchema>;
 
 export function AgentTrainingForm() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("twitter");
 
@@ -78,8 +80,13 @@ export function AgentTrainingForm() {
       });
 
       showToast.success(`Agent created from Twitter profile: ${data.twitterHandle}`);
-
-      twitterForm.reset();
+      
+      // Redirect to chat with the new agent
+      if (response.data.success && response.data.data) {
+        router.push(`/agents/chat?handle=${response.data.data.id}`);
+      } else {
+        twitterForm.reset();
+      }
     } catch (error: unknown) {
       console.error("Error creating agent from Twitter:", error);
       const errorMessage = error instanceof Error 
@@ -89,7 +96,6 @@ export function AgentTrainingForm() {
           : "Failed to create agent";
           
       showToast.error(errorMessage);
-    } finally {
       setIsLoading(false);
     }
   }
@@ -107,8 +113,13 @@ export function AgentTrainingForm() {
       });
 
       showToast.success(`Agent created from character profile: ${data.name}`);
-
-      characterForm.reset();
+      
+      // Redirect to chat with the new agent
+      if (response.data.success && response.data.data) {
+        router.push(`/agents/chat?handle=${response.data.data.id}`);
+      } else {
+        characterForm.reset();
+      }
     } catch (error: unknown) {
       console.error("Error creating agent from character:", error);
       const errorMessage = error instanceof Error 
@@ -118,7 +129,6 @@ export function AgentTrainingForm() {
           : "Failed to create agent";
           
       showToast.error(errorMessage);
-    } finally {
       setIsLoading(false);
     }
   }

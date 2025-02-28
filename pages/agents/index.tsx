@@ -1,17 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { agents, categories } from '@/lib/constants';
+import { categories } from '@/lib/constants';
 import LoadingState from '@/components/LoadingState'; 
 import { AgentNavigation } from '@/components/AgentNavigation';
+import axios from 'axios';
+import { Agent } from '@/lib/types';
+import { showToast } from '@/lib/toast';
 
 export default function AgentsPage() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch agents from API
+  useEffect(() => {
+    async function fetchAgents() {
+      try {
+        setIsLoading(true);
+        const response = await axios.post('/api/agent-training', {
+          action: 'getAgents'
+        });
+        
+        if (response.data.success) {
+          setAgents(response.data.data);
+        } else {
+          throw new Error(response.data.error || 'Failed to fetch agents');
+        }
+      } catch (error) {
+        console.error('Error fetching agents:', error);
+        showToast.error('Failed to load agents');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchAgents();
+  }, []);
 
   const filteredAgents = agents.filter((agent) => {
-    const matchesCategory = selectedCategory === 'all' || agent.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'all' || agent.category.toLowerCase() === selectedCategory.toLowerCase();
     const matchesSearch = agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       agent.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -55,7 +85,7 @@ export default function AgentsPage() {
           </div>
 
           {/* Category Filters */}
-          <div className="flex space-x-4 mb-6 pb-2">
+          <div className="flex space-x-4 mb-6 pb-2 overflow-x-auto">
             {categories.map((category) => (
               <button
                 key={category.id}
@@ -76,116 +106,109 @@ export default function AgentsPage() {
 
       {/* Agents Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAgents.map((agent) => (
-            <div
-              key={agent.id}
-              className="group relative bg-gradient-to-b from-[#0B1628] via-[#0D1425] to-[#0B1628] rounded-2xl overflow-hidden cursor-pointer backdrop-blur-sm border border-white/[0.05]"
-              onClick={() => router.push(`/agents/${agent.id}`)}
-            >
-              {/* Gradient Border Effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <LoadingState />
+          </div>
+        ) : filteredAgents.length === 0 ? (
+          <div className="text-center py-20">
+            <h3 className="text-xl font-medium text-white mb-2">No agents found</h3>
+            <p className="text-gray-400">
+              Try adjusting your search or filter criteria, or create a new agent.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredAgents.map((agent) => (
+              <div
+                key={agent.id}
+                className="group relative bg-gradient-to-b from-[#0B1628] via-[#0D1425] to-[#0B1628] rounded-2xl overflow-hidden cursor-pointer backdrop-blur-sm border border-white/[0.05]"
+                onClick={() => router.push(`/agents/chat?handle=${agent.id}`)}
+              >
+                {/* Gradient Border Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-              {/* Card Content */}
-              <div className="relative p-6">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center">
-                    <div className="relative w-12 h-12 rounded-xl overflow-hidden mr-4">
-                      {agent.imageUrl ? (
-                        <Image
-                          src={agent.imageUrl}
-                          alt={agent.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <Image
-                          src="/logos/aiagent-bg.png"
-                          alt="Placeholder"
-                          fill
-                          className="object-cover"
-                        />
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-medium text-white">{agent.name}</h3>
-                      <div className="flex items-center mt-1">
-                        <div className="flex items-center text-yellow-400">
-                          <span className="text-sm mr-1">⭐</span>
-                          <span className="text-sm font-medium">{agent.score}</span>
+                {/* Card Content */}
+                <div className="relative p-6">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center">
+                      <div className="relative w-12 h-12 rounded-xl overflow-hidden mr-4">
+                        {agent.imageUrl ? (
+                          <Image
+                            src={agent.imageUrl}
+                            alt={agent.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <Image
+                            src="/logos/aiagent-bg.png"
+                            alt="Placeholder"
+                            fill
+                            className="object-cover"
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-medium text-white">{agent.name}</h3>
+                        <div className="flex items-center mt-1">
+                          <div className="flex items-center text-yellow-400">
+                            <span className="text-sm mr-1">⭐</span>
+                            <span className="text-sm font-medium">{agent.score}</span>
+                          </div>
+                          <span className="mx-2 text-gray-500">•</span>
+                          <span className="text-sm text-gray-400">v{agent.version}</span>
                         </div>
-                        <span className="mx-2 text-gray-500">•</span>
-                        <span className="text-sm text-gray-400">v{agent.version}</span>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Description */}
-                <div className="text-gray-400 text-sm mb-6 line-clamp-2">
-                  {agent.description}
-                </div>
+                  {/* Description */}
+                  <div className="text-gray-400 text-sm mb-6 line-clamp-2">
+                    {agent.description}
+                  </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="bg-[#0A1220] rounded-xl p-3 text-center backdrop-blur-sm">
-                    <div className="text-sm text-gray-400">Users</div>
-                    <div className="text-white font-medium mt-1">
-                      {agent.stats.users.toLocaleString()}
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="bg-[#0A1220] rounded-xl p-3 text-center backdrop-blur-sm">
+                      <div className="text-sm text-gray-400">Users</div>
+                      <div className="text-white font-medium mt-1">
+                        {agent.stats.users.toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="bg-[#0A1220] rounded-xl p-3 text-center backdrop-blur-sm">
+                      <div className="text-sm text-gray-400">Txns</div>
+                      <div className="text-white font-medium mt-1">
+                        {agent.stats.transactions.toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="bg-[#0A1220] rounded-xl p-3 text-center backdrop-blur-sm">
+                      <div className="text-sm text-gray-400">Volume</div>
+                      <div className="text-white font-medium mt-1">
+                        ${(agent.stats.volume / 1000000).toFixed(1)}M
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-[#0A1220] rounded-xl p-3 text-center backdrop-blur-sm">
-                    <div className="text-sm text-gray-400">Txns</div>
-                    <div className="text-white font-medium mt-1">
-                      {agent.stats.transactions.toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="bg-[#0A1220] rounded-xl p-3 text-center backdrop-blur-sm">
-                    <div className="text-sm text-gray-400">Volume</div>
-                    <div className="text-white font-medium mt-1">
-                      ${(agent.stats.volume / 1000000).toFixed(1)}M
-                    </div>
-                  </div>
-                </div>
 
-                {/* Footer */}
-                <div className="flex items-center justify-between">
-                  {/* <div className="flex -space-x-2">
-                    {agent.chains.map((chainId, index) => {
-                      const chainData = chains.find((c) => c.id === chainId);
-                      return (
-                        <div
-                          key={chainId}
-                          className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-[#0D1425] bg-[#131B31] hover:scale-110 transition-transform duration-200"
-                          style={{ 
-                            zIndex: agent.chains.length - index,
-                            transform: `translateX(${index * -8}px)` 
-                          }}
-                        >
-                          {chainData && (
-                            <Image
-                              src={chainData.logo}
-                              alt={chainData.name}
-                              fill
-                              className="object-contain p-1.5"
-                              sizes="32px"
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div> */}
-                  <div className="flex items-center space-x-2">
-                    <span className="px-3 py-1 text-sm bg-[#131B31] text-blue-400 rounded-lg">
-                      {agent.category}
-                    </span>
+                  {/* Footer */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="px-3 py-1 text-sm bg-[#131B31] text-blue-400 rounded-lg">
+                        {agent.category}
+                      </span>
+                      {agent.twitter && (
+                        <span className="px-3 py-1 text-sm bg-[#131B31] text-blue-400 rounded-lg">
+                          Twitter
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
