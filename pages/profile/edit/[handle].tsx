@@ -6,6 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import supabase from '@/lib/supabase'
 import type { Database } from '@/types/supabase'
+import { getUserProfileByAddress } from '@/lib/user-utils'
+import { setCookie } from 'cookies-next'
+import { showToast } from '@/lib/toast'
 
 type UserProfile = Database['public']['Tables']['agent_chain_users']['Row']
 
@@ -46,9 +49,17 @@ export default function EditProfilePage() {
     })
 
     useEffect(() => {
+        // Set wallet-connected cookie for middleware if connected
+        if (isConnected && address) {
+            setCookie('wallet-connected', 'true', { maxAge: 60 * 60 * 24 }) // 24 hours
+        }
+    }, [isConnected, address])
+
+    useEffect(() => {
         if (!handle || typeof handle !== 'string') return
         if (!isConnected || !address) {
             router.push('/')
+            showToast.error('Please connect your wallet to edit your profile')
             return
         }
 
@@ -66,14 +77,11 @@ export default function EditProfilePage() {
                 setUserProfile(profile)
 
                 // Check if current user is the profile owner
-                const { data: walletData } = await supabase
-                    .from('agent_chain_wallets')
-                    .select('handle')
-                    .eq('address', address)
-                    .single()
-
-                if (walletData?.handle !== handle) {
+                const currentUserProfile = await getUserProfileByAddress(address)
+                
+                if (currentUserProfile?.handle !== handle) {
                     // Not the owner, redirect to profile page
+                    showToast.error('You do not have permission to edit this profile')
                     router.push(`/profile/${handle}`)
                     return
                 }
@@ -90,6 +98,7 @@ export default function EditProfilePage() {
                 })
             } catch (error) {
                 console.error('Error fetching profile:', error)
+                showToast.error('Error loading profile')
             } finally {
                 setIsLoading(false)
             }
@@ -152,10 +161,13 @@ export default function EditProfilePage() {
                 })
             }
 
+            showToast.success('Profile updated successfully')
+            
             // Redirect to profile page
             router.push(`/profile/${handle}`)
         } catch (error: any) {
             setError(error.message || 'Failed to update profile')
+            showToast.error('Failed to update profile')
         } finally {
             setIsSubmitting(false)
         }

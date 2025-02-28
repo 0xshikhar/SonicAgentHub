@@ -43,6 +43,42 @@ export type Database = {
           to_handle?: string | null
           top_level_type?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "fk_action_events_from_handle"
+            columns: ["from_handle"]
+            isOneToOne: false
+            referencedRelation: "agent_chain_users"
+            referencedColumns: ["handle"]
+          },
+          {
+            foreignKeyName: "fk_action_events_to_handle"
+            columns: ["to_handle"]
+            isOneToOne: false
+            referencedRelation: "agent_chain_users"
+            referencedColumns: ["handle"]
+          },
+        ]
+      }
+      agent_chain_end_users: {
+        Row: {
+          address: string
+          agentCreated: boolean | null
+          created_at: string
+          id: number
+        }
+        Insert: {
+          address: string
+          agentCreated?: boolean | null
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          address?: string
+          agentCreated?: boolean | null
+          created_at?: string
+          id?: number
+        }
         Relationships: []
       }
       agent_chain_saved_tweets: {
@@ -67,7 +103,15 @@ export type Database = {
           id?: string
           posted_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_saved_tweets_handle"
+            columns: ["handle"]
+            isOneToOne: false
+            referencedRelation: "agent_chain_users"
+            referencedColumns: ["handle"]
+          },
+        ]
       }
       agent_chain_smol_tweets: {
         Row: {
@@ -106,7 +150,22 @@ export type Database = {
           link_preview_img_url?: string | null
           link_title?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_smol_tweets_action_id"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "agent_chain_action_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_smol_tweets_handle"
+            columns: ["handle"]
+            isOneToOne: false
+            referencedRelation: "agent_chain_users"
+            referencedColumns: ["handle"]
+          },
+        ]
       }
       agent_chain_updates_life_context: {
         Row: {
@@ -136,7 +195,22 @@ export type Database = {
           previous_life_context?: string
           summary_of_the_changes?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_updates_life_context_action_id"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "agent_chain_action_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_updates_life_context_handle"
+            columns: ["handle"]
+            isOneToOne: false
+            referencedRelation: "agent_chain_users"
+            referencedColumns: ["handle"]
+          },
+        ]
       }
       agent_chain_updates_life_goals: {
         Row: {
@@ -166,7 +240,22 @@ export type Database = {
           previous_life_goals?: string
           summary_of_the_changes?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_updates_life_goals_action_id"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "agent_chain_action_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_updates_life_goals_handle"
+            columns: ["handle"]
+            isOneToOne: false
+            referencedRelation: "agent_chain_users"
+            referencedColumns: ["handle"]
+          },
+        ]
       }
       agent_chain_updates_skills: {
         Row: {
@@ -196,13 +285,29 @@ export type Database = {
           previous_skills?: string
           summary_of_the_changes?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_updates_skills_action_id"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "agent_chain_action_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_updates_skills_handle"
+            columns: ["handle"]
+            isOneToOne: false
+            referencedRelation: "agent_chain_users"
+            referencedColumns: ["handle"]
+          },
+        ]
       }
       agent_chain_users: {
         Row: {
           bio: string | null
           cover_picture: string | null
           created_at: string | null
+          creator: string | null
           display_name: string
           handle: string
           life_context: string
@@ -215,6 +320,7 @@ export type Database = {
           bio?: string | null
           cover_picture?: string | null
           created_at?: string | null
+          creator?: string | null
           display_name: string
           handle: string
           life_context: string
@@ -227,6 +333,7 @@ export type Database = {
           bio?: string | null
           cover_picture?: string | null
           created_at?: string | null
+          creator?: string | null
           display_name?: string
           handle?: string
           life_context?: string
@@ -235,7 +342,15 @@ export type Database = {
           skills?: string
           twitter_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "agent_chain_users_creator_fkey"
+            columns: ["creator"]
+            isOneToOne: false
+            referencedRelation: "agent_chain_end_users"
+            referencedColumns: ["address"]
+          },
+        ]
       }
       agent_chain_wallets: {
         Row: {
@@ -259,7 +374,15 @@ export type Database = {
           permit_signature?: string
           private_key?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_wallets_handle"
+            columns: ["handle"]
+            isOneToOne: true
+            referencedRelation: "agent_chain_users"
+            referencedColumns: ["handle"]
+          },
+        ]
       }
     }
     Views: {

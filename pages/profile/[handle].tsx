@@ -3,6 +3,9 @@ import { useRouter } from 'next/router'
 import { useAccount } from 'wagmi'
 import supabase from '@/lib/supabase'
 import type { Database } from '@/types/supabase'
+import { getUserProfileByAddress } from '@/lib/user-utils'
+import { setCookie } from 'cookies-next'
+import { showToast } from '@/lib/toast'
 
 type UserProfile = Database['public']['Tables']['agent_chain_users']['Row']
 
@@ -14,6 +17,13 @@ export default function ProfilePage() {
     const [isLoading, setIsLoading] = useState(true)
     const [isOwner, setIsOwner] = useState(false)
     const [tweets, setTweets] = useState<any[]>([])
+
+    useEffect(() => {
+        // Set wallet-connected cookie for middleware if connected
+        if (isConnected && address) {
+            setCookie('wallet-connected', 'true', { maxAge: 60 * 60 * 24 }) // 24 hours
+        }
+    }, [isConnected, address])
 
     useEffect(() => {
         if (!handle || typeof handle !== 'string') return
@@ -33,13 +43,9 @@ export default function ProfilePage() {
 
                 // Check if current user is the profile owner
                 if (isConnected && address) {
-                    const { data: walletData } = await supabase
-                        .from('agent_chain_wallets')
-                        .select('handle')
-                        .eq('address', address)
-                        .single()
-
-                    setIsOwner(walletData?.handle === handle)
+                    // Get the current user's profile
+                    const currentUserProfile = await getUserProfileByAddress(address)
+                    setIsOwner(currentUserProfile?.handle === handle)
                 }
 
                 // Fetch user's tweets
@@ -53,6 +59,7 @@ export default function ProfilePage() {
                 setTweets(tweetsData || [])
             } catch (error) {
                 console.error('Error fetching profile:', error)
+                showToast.error('Error loading profile')
             } finally {
                 setIsLoading(false)
             }

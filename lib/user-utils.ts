@@ -1,8 +1,37 @@
 import supabase from './supabase'
 import type { TablesInsert } from '@/types/supabase'
 
+export async function getOrCreateEndUser(address: string) {
+    // First check if end user exists
+    const { data: existingUser } = await supabase
+        .from('agent_chain_end_users')
+        .select('*')
+        .eq('address', address)
+        .single()
+
+    if (existingUser) return existingUser
+
+    // If not, create a new end user
+    const userData: TablesInsert<'agent_chain_end_users'> = {
+        address,
+        agentCreated: false,
+    }
+
+    const { data, error } = await supabase
+        .from('agent_chain_end_users')
+        .insert(userData)
+        .select()
+        .single()
+
+    if (error) throw error
+    return data
+}
+
 export async function getOrCreateUserProfile(address: string) {
-    // First check if user exists
+    // First ensure the end user exists
+    await getOrCreateEndUser(address)
+
+    // Then check if user profile exists
     const { data: existingUser } = await supabase
         .from('agent_chain_users')
         .select('*')
@@ -11,7 +40,7 @@ export async function getOrCreateUserProfile(address: string) {
 
     if (existingUser) return existingUser
 
-    // If not, create a new user with the wallet address as part of the handle
+    // If not, create a new user profile with the wallet address as part of the handle
     const handle = `user_${address.slice(2, 8).toLowerCase()}`
     const userData: TablesInsert<'agent_chain_users'> = {
         handle,
@@ -19,6 +48,7 @@ export async function getOrCreateUserProfile(address: string) {
         life_context: '',
         life_goals: '',
         skills: '',
+        creator: address, // Link to the end user
     }
 
     const { data, error } = await supabase
@@ -46,4 +76,34 @@ export async function createWalletForUser(handle: string, address: string, priva
 
     if (error) throw error
     return data
+}
+
+// Get user profile by wallet address
+export async function getUserProfileByAddress(address: string) {
+    // First try to find the user's wallet
+    const { data: walletData } = await supabase
+        .from('agent_chain_wallets')
+        .select('handle')
+        .eq('address', address)
+        .single()
+
+    if (walletData?.handle) {
+        // If found, get the user profile
+        const { data: userData } = await supabase
+            .from('agent_chain_users')
+            .select('*')
+            .eq('handle', walletData.handle)
+            .single()
+
+        return userData
+    }
+
+    // If not found by wallet, try to find by creator field
+    const { data: userData } = await supabase
+        .from('agent_chain_users')
+        .select('*')
+        .eq('creator', address)
+        .single()
+
+    return userData
 }

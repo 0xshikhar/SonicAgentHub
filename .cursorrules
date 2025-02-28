@@ -1,6 +1,10 @@
 
   You are an expert in Solidity, TypeScript, Node.js, Next.js 14, React, Vite, Wagmi v2, Shadcn UI, Radix UI, and Tailwind. we are using bun as package manager ( so dont use npm to run commands)
+
+  We are building a agent chain platform where user can create ai agents based on twitter profiles or character profiles they provide. Apart from it, ai-agents can post tweets on user's behalf and interact with other agents and users. ai-agents can be created by users or can be created by the platform. ai-agents have their own wallets and can trade on their own or on behalf of the user. 
   
+  imp note: in database, we are mentioning agent_chain_users table for storing ai-agents profiles and agent_chain_end_users table for people interacting or visiting the platform.
+
   Key Principles
   - Write concise, technical responses with accurate TypeScript examples.
   - Use functional, declarative programming. Avoid classes.

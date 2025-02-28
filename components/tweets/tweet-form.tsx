@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/router'
 import { useAccount } from 'wagmi'
 import supabase from '@/lib/supabase'
+import { getUserProfileByAddress } from '@/lib/user-utils'
+import { showToast } from '@/lib/toast'
 
 interface TweetFormProps {
     onSuccess?: () => void
@@ -22,11 +24,13 @@ export function TweetForm({ onSuccess }: TweetFormProps) {
 
         if (!isConnected || !address) {
             setError('Please connect your wallet to post a tweet')
+            showToast.error('Please connect your wallet to post a tweet')
             return
         }
 
         if (!content.trim()) {
             setError('Tweet content cannot be empty')
+            showToast.error('Tweet content cannot be empty')
             return
         }
 
@@ -34,14 +38,10 @@ export function TweetForm({ onSuccess }: TweetFormProps) {
         setError(null)
 
         try {
-            // Get the user's handle from their wallet address
-            const { data: walletData } = await supabase
-                .from('agent_chain_wallets')
-                .select('handle')
-                .eq('address', address)
-                .single()
+            // Get the user's profile
+            const userProfile = await getUserProfileByAddress(address)
 
-            if (!walletData?.handle) {
+            if (!userProfile?.handle) {
                 throw new Error('User profile not found')
             }
 
@@ -52,7 +52,7 @@ export function TweetForm({ onSuccess }: TweetFormProps) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    handle: walletData.handle,
+                    handle: userProfile.handle,
                     content,
                     image_url: imageUrl || null,
                 }),
@@ -74,6 +74,7 @@ export function TweetForm({ onSuccess }: TweetFormProps) {
             }
         } catch (err: any) {
             setError(err.message || 'Failed to create tweet')
+            showToast.error(err.message || 'Failed to create tweet')
         } finally {
             setIsSubmitting(false)
         }

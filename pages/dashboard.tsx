@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { useAccount } from 'wagmi'
 import supabase from '@/lib/supabase'
-import { getOrCreateUserProfile, createWalletForUser } from '@/lib/user-utils'
+import { getOrCreateUserProfile, createWalletForUser, getOrCreateEndUser } from '@/lib/user-utils'
 import type { Database } from '@/types/supabase'
 import { setCookie } from 'cookies-next'
+import { showToast } from '@/lib/toast'
 
 type UserProfile = Database['public']['Tables']['agent_chain_users']['Row']
 
@@ -28,6 +29,10 @@ export default function DashboardPage() {
         const fetchUserProfile = async () => {
             setIsLoading(true)
             try {
+                // First ensure the end user exists
+                await getOrCreateEndUser(address)
+                
+                // Then get or create the user profile
                 const profile = await getOrCreateUserProfile(address)
                 setUserProfile(profile)
 
@@ -43,8 +48,11 @@ export default function DashboardPage() {
                     // This is just for demonstration
                     await createWalletForUser(profile.handle, address, 'demo-private-key')
                 }
+                
+                showToast.success('Welcome to your dashboard!')
             } catch (error) {
                 console.error('Error fetching user profile:', error)
+                showToast.error('Error loading your profile')
             } finally {
                 setIsLoading(false)
             }

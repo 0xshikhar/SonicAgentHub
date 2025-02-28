@@ -5,7 +5,12 @@ export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // List of protected routes that require wallet authentication
-  const protectedRoutes = ['/agents', '/dashboard'];
+  const protectedRoutes = [
+    '/agents', 
+    '/dashboard', 
+    '/profile', 
+    '/tweets'
+  ];
 
   if (protectedRoutes.some(route => path.startsWith(route))) {
     // Check if wallet is connected by looking for the wallet-connected cookie
@@ -13,8 +18,10 @@ export function middleware(request: NextRequest) {
     const isWalletConnected = request.cookies.get('wallet-connected');
     
     if (!isWalletConnected) {
-      // Redirect to the connect wallet page if not authenticated
-      return NextResponse.redirect(new URL('/', request.url));
+      // Redirect to the home page with a query parameter to show toast
+      const url = new URL('/', request.url);
+      url.searchParams.set('auth', 'required');
+      return NextResponse.redirect(url);
     }
   }
 

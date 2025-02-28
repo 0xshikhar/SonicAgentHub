@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { agents, categories } from '@/lib/constants';
 import LoadingState from '@/components/LoadingState'; 
+import { AgentNavigation } from '@/components/AgentNavigation';
 
 export default function AgentsPage() {
   const router = useRouter();
@@ -25,6 +26,9 @@ export default function AgentsPage() {
           <h1 className="text-4xl font-bold text-white mb-8">
             Discover AI Agents
           </h1>
+
+          {/* Navigation */}
+          <AgentNavigation />
 
           {/* Search Bar */}
           <div className="relative max-w-xl mb-8">

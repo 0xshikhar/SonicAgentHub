@@ -3,6 +3,7 @@ import { useAccount } from 'wagmi'
 import { TweetForm } from '@/components/tweets/tweet-form'
 import supabase from '@/lib/supabase'
 import { setCookie } from 'cookies-next'
+import { showToast } from '@/lib/toast'
 
 export default function TweetsPage() {
     const { address, isConnected } = useAccount()
@@ -27,6 +28,7 @@ export default function TweetsPage() {
                 setTweets(data || [])
             } catch (error) {
                 console.error('Error fetching tweets:', error)
+                showToast.error('Error loading tweets')
             } finally {
                 setIsLoading(false)
             }
@@ -58,6 +60,8 @@ export default function TweetsPage() {
                         },
                         ...prevTweets
                     ])
+                    
+                    showToast.info('New tweet posted')
                 }
 
                 fetchUserForTweet()
@@ -71,14 +75,19 @@ export default function TweetsPage() {
 
     const handleTweetSuccess = () => {
         // No need to manually refresh as we're using real-time subscription
+        showToast.success('Tweet posted successfully')
     }
 
     return (
         <div className="container py-12">
             <h1 className="text-3xl font-bold mb-8">Tweets</h1>
 
-            {isConnected && (
+            {isConnected ? (
                 <TweetForm onSuccess={handleTweetSuccess} />
+            ) : (
+                <div className="p-4 bg-amber-100 text-amber-700 rounded-md mb-6">
+                    Please connect your wallet to post tweets
+                </div>
             )}
 
             <div className="space-y-4">

@@ -1,13 +1,24 @@
 import { useRouter } from 'next/router';
-// import { usePrivy } from '@privy-io/react-auth';
-import Image from 'next/image';
+import { useEffect } from 'react';
 import { FeatureIcon } from '@/components/FeatureIcons';
-import Link from 'next/link';
 import HeroSection from '@/components/Hero';
 import HeroAnimation from '@/components/HeroAnimation';
+import { showToast } from '@/lib/toast';
 
 export default function HomePage() {
   const router = useRouter();
+  const { auth } = router.query;
+
+  useEffect(() => {
+    // Show toast if redirected from a protected route
+    if (auth === 'required') {
+      showToast.error('Please connect your wallet to access this page');
+      
+      // Remove the query parameter to prevent showing the toast again on refresh
+      const { pathname } = router;
+      router.replace(pathname, undefined, { shallow: true });
+    }
+  }, [auth, router]);
 
   return (
     <div className="min-h-screen w-full bg-[#050A14] relative overflow-hidden">
