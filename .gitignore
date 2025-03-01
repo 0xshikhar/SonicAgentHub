@@ -110,6 +110,7 @@ dist
 CLEANUP.md
 SUPABASE_TEST.md
 SUPABASE_SETUP.md
+.md
 
 scripts/test-general-agents.js
 scripts/check-supabase.js

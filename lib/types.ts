@@ -3,19 +3,12 @@ export interface Agent {
     name: string;
     description: string;
     category: 'Trading' | 'Social' | 'DeFi' | 'NFT' | 'Gaming' | 'DAO';
-    chains: string[];
     version: string;
     score: number;
     imageUrl: string;
-    contractAddress: string;
     twitter?: string;
     website?: string;
     mainContract?: string;
-    stats: {
-        users: number;
-        transactions: number;
-        volume: number;
-    };
     features?: string[];
     metrics?: AgentMetric[];
     reviews?: AgentReview[];

@@ -1,7 +1,7 @@
 // This script creates test Twitter agents by calling the API endpoint
-// Usage: node scripts/create-test-agents.js
+// Usage: bun run scripts/create-test-agents.ts
 
-const axios = require('axios');
+import axios from 'axios';
 
 // List of test Twitter handles
 const testHandles = [
@@ -12,33 +12,45 @@ const testHandles = [
     'jack'
 ];
 
+// Define the expected response structure
+interface AgentResponse {
+    success: boolean;
+    profile?: any;
+    data?: any;
+    error?: string;
+}
+
 /**
  * Creates a test agent by calling the API endpoint
- * @param {string} handle Twitter handle to create an agent from
+ * @param handle Twitter handle to create an agent from
  */
-async function createAgent(handle) {
+async function createAgent(handle: string): Promise<boolean> {
     console.log(`Creating agent for Twitter handle: @${handle}...`);
 
     try {
-        const response = await axios.post(
+        const response = await axios.post<AgentResponse>(
             'http://localhost:3000/api/users/create',
             { handle }
         );
 
         if (response.data.success) {
             console.log(`✅ Successfully created agent for @${handle}`);
-            console.log(`Agent details:`, response.data.data);
+            const profileData = response.data.profile || response.data.data;
+            console.log(`Agent details:`, profileData);
+            return true;
         } else {
             console.error(`❌ Failed to create agent for @${handle}: ${response.data.error}`);
+            return false;
         }
-    } catch (error) {
+    } catch (error: unknown) {
         if (axios.isAxiosError(error) && error.response) {
-            console.error(`❌ Error creating agent for @${handle}: ${error.response.data.error || error.message}`);
+            console.error(`❌ Error creating agent for @${handle}: ${error.response.data?.error || error.message}`);
         } else if (error instanceof Error) {
             console.error(`❌ Error creating agent for @${handle}: ${error.message}`);
         } else {
             console.error(`❌ Unknown error creating agent for @${handle}`);
         }
+        return false;
     }
 }
 
@@ -47,15 +59,24 @@ async function createAgent(handle) {
  */
 async function main() {
     console.log('Starting test agent creation...');
+    
+    let successCount = 0;
+    let failureCount = 0;
 
     // Create agents sequentially with a delay to avoid rate limiting
     for (const handle of testHandles) {
-        await createAgent(handle);
-        // Wait 1 second between requests
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const success = await createAgent(handle);
+        if (success) {
+            successCount++;
+        } else {
+            failureCount++;
+        }
+        // Wait 2 seconds between requests to avoid overwhelming the server
+        await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     console.log('Test agent creation complete!');
+    console.log(`Summary: ${successCount} agents created successfully, ${failureCount} failed`);
 }
 
 // Run the main function

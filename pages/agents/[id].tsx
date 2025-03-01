@@ -178,29 +178,6 @@ export default function AgentDetailPage() {
                                 </div>
                             </div>
 
-                            {/* Agent Stats */}
-                            <div className="grid grid-cols-3 gap-4 mt-6 w-full max-w-xs">
-                                <div className="bg-[#131B31] rounded-xl p-3 text-center backdrop-blur-sm">
-                                    <div className="text-sm text-gray-400">Users</div>
-                                    <div className="text-white font-medium mt-1">
-                                        {agent.stats.users.toLocaleString()}
-                                    </div>
-                                </div>
-                                <div className="bg-[#131B31] rounded-xl p-3 text-center backdrop-blur-sm">
-                                    <div className="text-sm text-gray-400">Txns</div>
-                                    <div className="text-white font-medium mt-1">
-                                        {agent.stats.transactions.toLocaleString()}
-                                    </div>
-                                </div>
-                                <div className="bg-[#131B31] rounded-xl p-3 text-center backdrop-blur-sm">
-                                    <div className="text-sm text-gray-400">Volume</div>
-                                    <div className="text-white font-medium mt-1">
-                                        ${(agent.stats.volume / 1000000).toFixed(1)}M
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         {/* Agent Details */}
                         <div className="flex-1">
                             {/* Tabs */}

@@ -1,6 +1,6 @@
 import { LIFE_GOALS_DEFAULT_COUNT } from "./constants";
 import { askGeminiWithMessagesAndSystemPrompt } from "./gemini";
-import { readIRLTweets } from "./postgres"; 
+import { readIRLTweets } from "./supabase-db";
 import { ChatMessage, FetchedTwitterUser, SavedTweet } from "./types";
 
 export const getLifeGoals = async (handle: string) => {
@@ -81,7 +81,7 @@ export const generateUserInitialSkillLevels = async (handle: string) => {
 
   const response = await askGeminiWithMessagesAndSystemPrompt({
     messages,
-    systemPrompt: `You are the core of 'Smol Universe', a game that converts real personalities into RPG stats. Analyze tweets and generate:
+    systemPrompt: `You are the core of 'Agent Chain', a platform that converts real personalities into RPG stats. Analyze tweets and generate:
 
 1. REAL skills (e.g., "Python Programming", "Photography") with levels matching tweet mentions
 2. INVENTED skills (e.g., "Memefuism", "Wi-Fi Detection") based on patterns
@@ -137,7 +137,7 @@ Return JSON format:
 "current_job_title": "", // Can be a full job title + company name. Examples: "💻  Web developer for OpenAI", "🚀 CTO of Gumroad", "🎨 Illustrator for Marvel Comics", "🏗️ Freelancer", or "🫠 Unemployed" if the character doesn't have a job at the moment.
 "weekly_jobs_income": 0, // Fictional salary or sum of all incom sources... maybe between 0-5000 $SMOL (unemployed=0)
 "weekly_jobs_income_explained": "" // Reasoning that explanis the background for the weekly_jobs_income value
-"weekly_life_expenses": 0 // ...maybe between 200-1000 $SMOL (fictional sum of paying rent and lifestyle personal avg expenses)
+"weekly_life_expenses": 0 // ...maybe between 200-1000 $AGENT (fictional sum of paying rent and lifestyle personal avg expenses)
 "weekly_life_expenses_explained": "" // Reasoning that explanis the background for the weekly_jobs_income value
 }
 
@@ -155,7 +155,7 @@ Return ONLY valid JSON. No explanations.`;
 
   const response = await askGeminiWithMessagesAndSystemPrompt({
     messages,
-    systemPrompt: `You're the core of "SmolUniverse", an artistic and experimental universe where ai agents live, create and interact in a virtual universe. 
+    systemPrompt: `You're the core of "AgentChain", an artistic and experimental universe where ai agents live, create and interact in a virtual universe. 
     
 Please, based on the tweets from the user, create a fictional life context for a parody character. Invent any missing details in the most entertaining way possible!`,
     temperature: 0.75, // Higher temp for more chaos

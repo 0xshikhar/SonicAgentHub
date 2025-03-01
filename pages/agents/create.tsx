@@ -65,10 +65,21 @@ type TwitterFormValues = z.infer<typeof twitterFormSchema>;
 type CharacterFormValues = z.infer<typeof characterFormSchema>;
 type OnchainFormValues = z.infer<typeof onchainFormSchema>;
 
+// List of test Twitter handles for quick testing
+const testHandles = [
+  'elonmusk',
+  'vitalikbuterin',
+  'naval',
+  'balajis',
+  'jack'
+];
+
 const CreateAgentPage: NextPage = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("twitter");
+  const [testingInProgress, setTestingInProgress] = useState(false);
+  const [testResults, setTestResults] = useState<Array<{handle: string; success: boolean; message: string}>>([]);
   const { address } = useAccount();
 
   // Twitter form
@@ -104,30 +115,33 @@ const CreateAgentPage: NextPage = () => {
   async function onTwitterSubmit(data: TwitterFormValues) {
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/agent-training", {
-        action: "createFromTwitter",
-        twitterHandle: data.twitterHandle,
-        createdBy: address,
+      // Clean the Twitter handle (remove @ if present)
+      const handle = data.twitterHandle.replace('@', '').trim();
+
+      // Call our new API endpoint
+      const response = await axios.post("/api/users/create", {
+        handle
       });
 
-      showToast.success(`Agent created from Twitter profile: ${data.twitterHandle}`);
-      
-      // Redirect to chat with the new agent
-      if (response.data.success && response.data.data) {
-        router.push(`/agents/chat?handle=${response.data.data.id}`);
+      if (response.data.success) {
+        showToast.success(`Agent created from Twitter profile: @${handle}`);
+
+        // Redirect to the agent's profile page
+        router.push(`/agents/${handle}`);
       } else {
+        showToast.error(response.data.error || "Failed to create agent");
         twitterForm.reset();
-        setIsLoading(false);
       }
     } catch (error: unknown) {
       console.error("Error creating agent from Twitter:", error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : axios.isAxiosError(error) && error.response?.data?.error 
-          ? error.response.data.error 
+      const errorMessage = error instanceof Error
+        ? error.message
+        : axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
           : "Failed to create agent";
-          
+
       showToast.error(errorMessage);
+    } finally {
       setIsLoading(false);
     }
   }
@@ -146,7 +160,7 @@ const CreateAgentPage: NextPage = () => {
       });
 
       showToast.success(`Agent created from character profile: ${data.name}`);
-      
+
       // Redirect to chat with the new agent
       if (response.data.success && response.data.data) {
         router.push(`/agents/chat?handle=${response.data.data.id}`);
@@ -156,12 +170,12 @@ const CreateAgentPage: NextPage = () => {
       }
     } catch (error: unknown) {
       console.error("Error creating agent from character:", error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : axios.isAxiosError(error) && error.response?.data?.error 
-          ? error.response.data.error 
+      const errorMessage = error instanceof Error
+        ? error.message
+        : axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
           : "Failed to create agent";
-          
+
       showToast.error(errorMessage);
       setIsLoading(false);
     }
@@ -182,19 +196,113 @@ const CreateAgentPage: NextPage = () => {
         showToast.success("Your onchain agent request has been submitted successfully!");
         onchainForm.reset();
       }
-      
+
       setIsLoading(false);
     } catch (error: unknown) {
       console.error("Error submitting onchain agent request:", error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : axios.isAxiosError(error) && error.response?.data?.error 
-          ? error.response.data.error 
+      const errorMessage = error instanceof Error
+        ? error.message
+        : axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
           : "Failed to submit request";
-          
+
       showToast.error(errorMessage);
       setIsLoading(false);
     }
+  }
+
+  // Function to create a single test agent with detailed logging
+  async function createSingleTestAgent(handle: string) {
+    try {
+      console.log(`Creating agent for @${handle}...`);
+      showToast.info(`Creating agent for @${handle}...`);
+      
+      // Get the base URL from the current window location
+      const baseUrl = window.location.origin;
+      console.log(`Using API endpoint: ${baseUrl}/api/users/create`);
+      
+      // Make the API request
+      const response = await axios.post(`${baseUrl}/api/users/create`, { handle });
+      console.log(`API response for @${handle}:`, response.data);
+      
+      if (response.data.success) {
+        console.log(`Successfully created agent for @${handle}:`, response.data);
+        showToast.success(`Successfully created agent for @${handle}`);
+        return true;
+      } else {
+        console.error(`Failed to create agent for @${handle}:`, response.data.error);
+        showToast.error(`Failed to create agent for @${handle}: ${response.data.error || "Unknown error"}`);
+        return false;
+      }
+    } catch (error: unknown) {
+      console.error(`Error creating agent for @${handle}:`, error);
+      
+      const errorMessage = error instanceof Error
+        ? error.message
+        : axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : "Failed to create agent";
+      
+      showToast.error(`Error creating agent for @${handle}: ${errorMessage}`);
+      return false;
+    }
+  }
+
+  // Function to create test agents
+  async function createTestAgents() {
+    setTestingInProgress(true);
+    setTestResults([]);
+    
+    const results = [];
+    
+    for (const handle of testHandles) {
+      try {
+        // Update UI to show current handle being processed
+        setTestResults(prev => [...prev, { handle, success: false, message: "Processing..." }]);
+        
+        // Use the single test agent function
+        const success = await createSingleTestAgent(handle);
+        
+        if (success) {
+          // Update results with success
+          setTestResults(prev => 
+            prev.map(item => 
+              item.handle === handle 
+                ? { handle, success: true, message: "Created successfully!" } 
+                : item
+            )
+          );
+          results.push({ handle, success: true, message: "Created successfully!" });
+        } else {
+          // Update results with error
+          setTestResults(prev => 
+            prev.map(item => 
+              item.handle === handle 
+                ? { handle, success: false, message: "Failed to create agent" } 
+                : item
+            )
+          );
+          results.push({ handle, success: false, message: "Failed to create agent" });
+        }
+      } catch (error: unknown) {
+        console.error(`Error in createTestAgents for @${handle}:`, error);
+        
+        // Update results with error
+        setTestResults(prev => 
+          prev.map(item => 
+            item.handle === handle 
+              ? { handle, success: false, message: "Error creating agent" } 
+              : item
+          )
+        );
+        results.push({ handle, success: false, message: "Error creating agent" });
+      }
+      
+      // Add a small delay between requests
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
+    setTestingInProgress(false);
   }
 
   return (
@@ -206,7 +314,7 @@ const CreateAgentPage: NextPage = () => {
           content="Create an AI agent based on a Twitter profile, custom character, or request an onchain agent"
         />
       </Head>
-      
+
       <div className="min-h-screen bg-[#0A0E1A]">
         {/* Header with cosmic background */}
         <div className="relative border-b border-white/5">
@@ -223,49 +331,95 @@ const CreateAgentPage: NextPage = () => {
               <div className="absolute h-2 w-2 rounded-full bg-purple-400 top-[70%] left-[60%] animate-pulse" style={{ animationDelay: '1.8s' }}></div>
             </div>
           </div>
-          
+
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <h1 className="text-5xl font-bold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400">
               Create AI Agent
             </h1>
-            
+
             <p className="text-gray-300 text-lg mb-8 max-w-2xl">
               Create an AI agent that can interact with users, post tweets, and even trade on the blockchain
             </p>
+
+            <div className="flex items-center justify-between">
+              <AgentNavigation />
+              
+              {/* Test Button */}
+              <div className="ml-4">
+                <Button
+                  onClick={createTestAgents}
+                  disabled={testingInProgress}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                >
+                  {testingInProgress ? "Creating Test Agents..." : "Create Test Agents"}
+                </Button>
+              </div>
+            </div>
             
-        <AgentNavigation />
+            {/* Test Results */}
+            {testResults.length > 0 && (
+              <div className="mt-4 p-4 bg-[#131B31] border border-white/10 rounded-lg">
+                <h3 className="text-white font-semibold mb-2">Test Results:</h3>
+                <div className="space-y-2">
+                  {testResults.map((result, index) => (
+                    <div key={index} className="flex items-center">
+                      <span className="text-gray-300 w-24">@{result.handle}:</span>
+                      <span className={`ml-2 ${result.success ? 'text-green-400' : result.message === 'Processing...' ? 'text-yellow-400' : 'text-red-400'}`}>
+                        {result.message}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Individual Test Buttons */}
+            <div className="mt-4 p-4 bg-[#131B31] border border-white/10 rounded-lg">
+              <h3 className="text-white font-semibold mb-2">Test Individual Agents:</h3>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {testHandles.map((handle) => (
+                  <Button
+                    key={handle}
+                    onClick={() => createSingleTestAgent(handle)}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                  >
+                    @{handle}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-2">
-              <Tabs 
-                defaultValue="twitter" 
-                value={activeTab} 
-                onValueChange={setActiveTab} 
+              <Tabs
+                defaultValue="twitter"
+                value={activeTab}
+                onValueChange={setActiveTab}
                 className="w-full"
               >
                 <TabsList className="grid w-full grid-cols-3 bg-[#131B31] border border-white/10 p-1">
-                  <TabsTrigger 
-                    value="twitter" 
+                  <TabsTrigger
+                    value="twitter"
                     className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-twitter"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-twitter"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" /></svg>
                     Twitter
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="character" 
+                  <TabsTrigger
+                    value="character"
                     className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                     Character
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="onchain" 
+                  <TabsTrigger
+                    value="onchain"
                     className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-wallet"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-wallet"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" /><path d="M3 5v14a2 2 0 0 0 2 2h16v-5" /><path d="M18 12a2 2 0 0 0 0 4h4v-4Z" /></svg>
                     Onchain
                   </TabsTrigger>
                 </TabsList>
@@ -288,9 +442,9 @@ const CreateAgentPage: NextPage = () => {
                               <FormItem>
                                 <FormLabel className="text-white">Twitter Handle</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    placeholder="@username" 
-                                    {...field} 
+                                  <Input
+                                    placeholder="@username"
+                                    {...field}
                                     className="bg-[#131B31] border-white/10 text-white"
                                   />
                                 </FormControl>
@@ -302,9 +456,9 @@ const CreateAgentPage: NextPage = () => {
                             )}
                           />
 
-                          <Button 
-                            type="submit" 
-                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white" 
+                          <Button
+                            type="submit"
+                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
                             disabled={isLoading}
                           >
                             {isLoading ? "Creating Agent..." : "Create Twitter Agent"}
@@ -333,9 +487,9 @@ const CreateAgentPage: NextPage = () => {
                               <FormItem>
                                 <FormLabel className="text-white">Handle</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    placeholder="unique-handle" 
-                                    {...field} 
+                                  <Input
+                                    placeholder="unique-handle"
+                                    {...field}
                                     className="bg-[#131B31] border-white/10 text-white"
                                   />
                                 </FormControl>
@@ -354,9 +508,9 @@ const CreateAgentPage: NextPage = () => {
                               <FormItem>
                                 <FormLabel className="text-white">Name</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    placeholder="Character Name" 
-                                    {...field} 
+                                  <Input
+                                    placeholder="Character Name"
+                                    {...field}
                                     className="bg-[#131B31] border-white/10 text-white"
                                   />
                                 </FormControl>
@@ -431,9 +585,9 @@ const CreateAgentPage: NextPage = () => {
                             )}
                           />
 
-                          <Button 
-                            type="submit" 
-                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white" 
+                          <Button
+                            type="submit"
+                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
                             disabled={isLoading}
                           >
                             {isLoading ? "Creating Agent..." : "Create Character Agent"}
@@ -462,10 +616,10 @@ const CreateAgentPage: NextPage = () => {
                               <FormItem>
                                 <FormLabel className="text-white">Email</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    placeholder="your@email.com" 
-                                    type="email" 
-                                    {...field} 
+                                  <Input
+                                    placeholder="your@email.com"
+                                    type="email"
+                                    {...field}
                                     className="bg-[#131B31] border-white/10 text-white"
                                   />
                                 </FormControl>
@@ -524,9 +678,9 @@ const CreateAgentPage: NextPage = () => {
                             )}
                           />
 
-                          <Button 
-                            type="submit" 
-                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white" 
+                          <Button
+                            type="submit"
+                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
                             disabled={isLoading}
                           >
                             {isLoading ? "Submitting Request..." : "Submit Onchain Agent Request"}
@@ -557,9 +711,9 @@ const CreateAgentPage: NextPage = () => {
                       Create an AI agent based on a Twitter profile. The agent will analyze tweets and mimic the communication style.
                     </p>
                   </div>
-                  
+
                   <Separator className="bg-white/10" />
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 border-purple-500/30">Character</Badge>
@@ -569,9 +723,9 @@ const CreateAgentPage: NextPage = () => {
                       Create a custom AI agent with a unique personality, traits, and background of your design.
                     </p>
                   </div>
-                  
+
                   <Separator className="bg-white/10" />
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/30">Onchain</Badge>

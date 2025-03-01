@@ -7,7 +7,7 @@ import { FetchedTweet, FetchedTwitterUser } from "./types";
 import { cleanHandle, goodTwitterImage } from "./strings";
 import { postErrorToDiscord } from "./discord";
 
-export const getTwitterUserInfo = async (twitterHandle: string) => {
+export const getTwitterUserInfo = async (twitterHandle: string): Promise<FetchedTwitterUser> => {
     twitterHandle = twitterHandle.replace("@", "").trim().toLowerCase();
 
     const url = `https://api.socialdata.tools/twitter/user/${twitterHandle}`;
@@ -15,11 +15,38 @@ export const getTwitterUserInfo = async (twitterHandle: string) => {
         Authorization: `Bearer ${process.env.SOCIAL_DATA_TOOLS_API_KEY}`,
         Accept: "application/json",
     };
-    
+
     try {
-        const response = await axios.get(url, { headers });
-        console.log("🐽 twitter user info response.data", response.data);
-        return response.data;
+        console.log("🐽 twitter user info url", url);
+        // for now, just return a mock response - to avoid api costs
+        console.log("its working");
+        
+        // Return a mock Twitter user
+        return {
+            id: 12345678,
+            id_str: "12345678",
+            name: `${twitterHandle.charAt(0).toUpperCase() + twitterHandle.slice(1)}`,
+            screen_name: twitterHandle,
+            location: "Internet",
+            url: `https://twitter.com/${twitterHandle}`,
+            description: `This is a mock profile for ${twitterHandle}`,
+            protected: false,
+            verified: false,
+            followers_count: 1000,
+            friends_count: 500,
+            listed_count: 10,
+            favourites_count: 200,
+            statuses_count: 1500,
+            created_at: new Date().toISOString(),
+            profile_banner_url: "https://pbs.twimg.com/profile_banners/12345678/1600000000",
+            profile_image_url_https: `https://ui-avatars.com/api/?name=${twitterHandle}&background=random`,
+            can_dm: false,
+        };
+        
+        // In production, uncomment this:
+        // const response = await axios.get(url, { headers });
+        // console.log("🐽 twitter user info response.data", response.data);
+        // return response.data;
     } catch (error) {
         await postErrorToDiscord(`🔴 Error fetching Twitter user info for: ${twitterHandle}`);
         console.error(`🔴 Error fetching Twitter user info:`, error);
@@ -47,64 +74,83 @@ export const getTweetsFromUser = async (
             Accept: "application/json",
         };
 
-        let allTweets = [] as FetchedTweet[];
-        let cursor: string | null = null;
-        let callCount = 0;
-
-        do {
-            const url: string = cursor
-                ? `${baseUrl}&cursor=${encodeURIComponent(cursor)}`
-                : baseUrl;
-
-            try {
-                const response: AxiosResponse<ApiResponse> = await axios.get(url, {
-                    headers,
-                });
-                callCount++;
-
-                console.log(
-                    " 🐽 reading tweets from user",
-                    userHandle,
-                    "call#" + callCount
-                );
-
-                if (response.data.tweets && Array.isArray(response.data.tweets)) {
-                    allTweets = allTweets.concat(response.data.tweets);
-                }
-                cursor = response.data.next_cursor || null;
-            } catch (error) {
-                console.error(`Error in call ${callCount}:`, error);
-                break;
-            }
-        } while (
-            (cursor !== null || callCount < MAX_TWEET_API_CALL_COUNT) &&
-            allTweets.length < MAX_PUBLICATIONS_WHEN_PARSING_PROFILE
-        );
-
-        const allTweetsRaw = allTweets.map((tweet) => {
-            const objectFiltered = {
-                tweet_created_at: tweet.tweet_created_at,
-                id: tweet.id,
-                full_text: tweet.full_text,
-                favorite_count: tweet.favorite_count,
+        // For now, generate mock tweets instead of making API calls
+        const mockTweets: FetchedTweet[] = [];
+        
+        // Generate 10 mock tweets
+        for (let i = 1; i <= 10; i++) {
+            const tweetDate = new Date();
+            tweetDate.setDate(tweetDate.getDate() - i); // Each tweet is a day older
+            
+            mockTweets.push({
+                id: `mock-tweet-${i}`,
                 user_handle: userHandle,
-                reply_count: tweet.reply_count,
-                retweet_count: tweet.retweet_count,
-                quote_count: tweet.quote_count,
-                id_str: tweet.id_str,
+                text: `This is mock tweet #${i} from ${userHandle}`,
+                full_text: `This is a longer version of mock tweet #${i} from ${userHandle}. #mockdata #testing`,
+                tweet_created_at: tweetDate.toISOString(),
+                favorite_count: Math.floor(Math.random() * 100),
+                reply_count: Math.floor(Math.random() * 20),
+                retweet_count: Math.floor(Math.random() * 50),
+                quote_count: Math.floor(Math.random() * 10),
+                id_str: `mock-tweet-${i}`,
                 user: {
-                    screen_name: tweet.user.screen_name,
-                    profile_image_url_https: goodTwitterImage(tweet.user.profile_image_url_https),
-                    // profile_image_url_https: tweet.user.profile_image_url_https.replace(
-                    //     "_normal",
-                    //     "_400x400"
-                    // ),
+                    screen_name: userHandle,
+                    profile_image_url_https: `https://ui-avatars.com/api/?name=${userHandle}&background=random`,
                 },
-            } as FetchedTweet;
-            return objectFiltered;
-        });
+                user__screen_name: userHandle,
+                user__profile_image_url_https: `https://ui-avatars.com/api/?name=${userHandle}&background=random`,
+                sentiment: ["positive", "negative", "neutral"][Math.floor(Math.random() * 3)],
+                emotional_tone: ["happy", "sad", "angry", "excited"][Math.floor(Math.random() * 4)],
+                optimism_score: Math.random(),
+                toxicity_level: Math.random() * 0.3, // Keep toxicity low
+                subjectivity: Math.random(),
+                topic_categorization: ["tech", "politics", "entertainment", "sports"][Math.floor(Math.random() * 4)],
+                language_complexity: Math.random() * 10,
+                engagement_potential: Math.random(),
+                humor_or_sarcasm: Math.random() > 0.7 ? "humor" : "none",
+                polarity_intensity: Math.random(),
+            });
+        }
 
-        return { allTweets: allTweetsRaw };
+        console.log(` 🐽 Generated ${mockTweets.length} mock tweets for ${userHandle}`);
+
+        // In a real implementation, you would use the API:
+        // let allTweets = [] as FetchedTweet[];
+        // let cursor: string | null = null;
+        // let callCount = 0;
+        // 
+        // do {
+        //     const url: string = cursor
+        //         ? `${baseUrl}&cursor=${encodeURIComponent(cursor)}`
+        //         : baseUrl;
+        //
+        //     try {
+        //         const response: AxiosResponse<ApiResponse> = await axios.get(url, {
+        //             headers,
+        //         });
+        //
+        //         callCount++;
+        //
+        //         console.log(
+        //             " 🐽 reading tweets from user",
+        //             userHandle,
+        //             "call#" + callCount
+        //         );
+        //
+        //         if (response.data.tweets && Array.isArray(response.data.tweets)) {
+        //             allTweets = allTweets.concat(response.data.tweets);
+        //         }
+        //         cursor = response.data.next_cursor || null;
+        //     } catch (error) {
+        //         console.error(`Error in call ${callCount}:`, error);
+        //         break;
+        //     }
+        // } while (
+        //     (cursor !== null || callCount < MAX_TWEET_API_CALL_COUNT) &&
+        //     allTweets.length < MAX_PUBLICATIONS_WHEN_PARSING_PROFILE
+        // );
+
+        return { allTweets: mockTweets };
     } catch (error) {
         await postErrorToDiscord("🔴 Error in getTweetsFromUser: " + userHandle);
         console.error("🔴 Error in getTweetsFromUser:", error);
@@ -118,8 +164,10 @@ export const searchTweets = async (topic: string) => {
         Authorization: `Bearer ${process.env.SOCIAL_DATA_TOOLS_API_KEY}`,
         Accept: "application/json",
     };
-    const response = await axios.get(url, { headers });
-    return response.data;
+    // for now, just return a mock response - to avoid api costs
+    console.log("its working");
+    // const response = await axios.get(url, { headers });
+    // return response.data;
 };
 
 /**
@@ -130,20 +178,20 @@ export const searchTweets = async (topic: string) => {
 export const analyzeUserTweetsForAgentTraining = async (userHandle: string) => {
     try {
         userHandle = cleanHandle(userHandle);
-        
+
         // Get user profile information
         const userInfo = await getTwitterUserInfo(userHandle);
-        
+
         // Get user tweets
         const tweetsData = await getTweetsFromUser(userHandle);
-        
+
         if (!tweetsData || !tweetsData.allTweets.length) {
             throw new Error(`No tweets found for user ${userHandle}`);
         }
-        
+
         // Extract tweet texts for analysis
         const tweetTexts = tweetsData.allTweets.map(tweet => tweet.full_text);
-        
+
         // Prepare data for AI analysis
         const analysisData = {
             userHandle,
@@ -154,7 +202,7 @@ export const analyzeUserTweetsForAgentTraining = async (userHandle: string) => {
             writingStyle: analyzeWritingStyle(tweetTexts),
             interactionPatterns: analyzeInteractionPatterns(tweetsData.allTweets)
         };
-        
+
         return analysisData;
     } catch (error) {
         await postErrorToDiscord(`🔴 Error analyzing tweets for agent training: ${userHandle}`);
@@ -168,12 +216,12 @@ export const analyzeUserTweetsForAgentTraining = async (userHandle: string) => {
  */
 function calculateEngagementMetrics(tweets: FetchedTweet[]) {
     if (!tweets.length) return null;
-    
+
     const totalLikes = tweets.reduce((sum, tweet) => sum + (tweet.favorite_count || 0), 0);
     const totalRetweets = tweets.reduce((sum, tweet) => sum + (tweet.retweet_count || 0), 0);
     const totalReplies = tweets.reduce((sum, tweet) => sum + (tweet.reply_count || 0), 0);
     const totalQuotes = tweets.reduce((sum, tweet) => sum + (tweet.quote_count || 0), 0);
-    
+
     return {
         averageLikes: totalLikes / tweets.length,
         averageRetweets: totalRetweets / tweets.length,
@@ -200,21 +248,21 @@ function identifyTopicDistribution(tweets: FetchedTweet[]) {
  */
 function analyzeWritingStyle(tweetTexts: string[]) {
     if (!tweetTexts.length) return null;
-    
+
     // Calculate average tweet length
     const averageLength = tweetTexts.reduce((sum, text) => sum + text.length, 0) / tweetTexts.length;
-    
+
     // Count hashtags and mentions
     const hashtagCount = tweetTexts.reduce((count, text) => {
         const matches = text.match(/#\w+/g);
         return count + (matches ? matches.length : 0);
     }, 0);
-    
+
     const mentionCount = tweetTexts.reduce((count, text) => {
         const matches = text.match(/@\w+/g);
         return count + (matches ? matches.length : 0);
     }, 0);
-    
+
     return {
         averageTweetLength: averageLength,
         hashtagsPerTweet: hashtagCount / tweetTexts.length,
@@ -245,11 +293,11 @@ export const createAgentTrainingDataset = async (userHandle: string) => {
     try {
         // Get user analysis
         const userAnalysis = await analyzeUserTweetsForAgentTraining(userHandle);
-        
+
         if (!userAnalysis) {
             throw new Error(`Failed to analyze user ${userHandle} for training data`);
         }
-        
+
         // Create training dataset
         const trainingDataset = {
             profileInfo: {
@@ -266,7 +314,7 @@ export const createAgentTrainingDataset = async (userHandle: string) => {
             engagementPatterns: userAnalysis.engagementMetrics,
             interactionBehavior: userAnalysis.interactionPatterns,
         };
-        
+
         return trainingDataset;
     } catch (error) {
         await postErrorToDiscord(`🔴 Error creating agent training dataset: ${userHandle}`);

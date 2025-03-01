@@ -7,6 +7,7 @@ import { postErrorToDiscord } from "@/lib/discord";
 import { Agent, GeneralAgent } from "@/lib/types";
 import { createGeneralAgent, getGeneralAgent, listGeneralAgents } from "@/lib/supabase-utils";
 import type { Json } from "@/types/supabase";
+import { createApiSupabaseClient } from "@/lib/supabase"; // Import the API client creator instead of the default client
 
 interface SuccessResponse {
   success: true;
@@ -19,32 +20,31 @@ interface ErrorResponse {
   error: string;
 }
 
+// Union type for API responses
 type ApiResponse = SuccessResponse | ErrorResponse;
 
-// In-memory storage for created agents (for demo purposes)
+// In-memory store for dynamic agents (will be lost on server restart)
 const dynamicAgents: Agent[] = [];
 
-/**
- * Converts a database user to an Agent
- */
+// Helper function to convert DB user to Agent format
 function convertDbUserToAgent(dbUser: any): Agent {
   return {
     id: dbUser.handle,
     name: dbUser.display_name || dbUser.handle,
-    description: dbUser.bio || `AI agent based on ${dbUser.display_name || dbUser.handle}`,
-    category: 'Social', // Default category
+    description: dbUser.bio || "",
+    category: 'Social',
     chains: ['ETH', 'Polygon'],
     version: '1.0.0',
     score: 4.5,
-    imageUrl: dbUser.profile_picture || '/logos/aiagent-bg.png',
+    imageUrl: dbUser.profile_picture || "/logos/twitter.png",
     contractAddress: `0x${dbUser.handle}`,
-    twitter: dbUser.twitter_id ? `@${dbUser.twitter_id}` : undefined,
+    twitter: `@${dbUser.handle}`,
     stats: {
       users: 0,
       transactions: 0,
       volume: 0,
     },
-    features: ['Twitter Analysis', 'Personality Mirroring', 'Content Generation'],
+    features: ['Twitter Analysis', 'Personality Mirroring', 'Content Generation']
   };
 }
 
@@ -54,8 +54,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 
   const { action, agentId } = req.body;
+  console.log(`🔄 agent-training API: Processing action: ${action}`);
 
   try {
+    // Create a Supabase client that can bypass RLS for API routes
+    const supabase = createApiSupabaseClient();
+    
     switch (action) {
       case "createFromTwitter": {
         const { twitterHandle } = req.body;
@@ -63,6 +67,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         if (!twitterHandle) {
           return res.status(400).json({ success: false, error: "Twitter handle is required" });
         }
+        
+        console.log(`🔄 agent-training API: Creating agent from Twitter handle: ${twitterHandle}`);
         
         try {
           // Try to use the real service first for onchain agents
@@ -74,6 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           // Add to dynamic agents
           dynamicAgents.push(agent);
           
+          console.log(`✅ agent-training API: Successfully created agent from Twitter profile: ${twitterHandle}`);
           return res.status(200).json({ 
             success: true, 
             data: agent,
@@ -108,26 +115,63 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             
             console.log("Attempting to create general agent with data:", generalAgentData);
             
-            const generalAgent = await createGeneralAgent(generalAgentData);
-            
-            console.log("General agent created successfully:", generalAgent);
-            
-            // Convert to Agent format for frontend
-            const agent = createAgentFromTwitterProfile({
-              handle: generalAgent.handle,
-              name: generalAgent.name,
-              description: generalAgent.description || "",
-              profileImage: generalAgent.profile_picture || "/logos/twitter.png"
-            });
-            
-            // Store in memory for current session
-            dynamicAgents.push(agent);
-            
-            return res.status(200).json({ 
-              success: true, 
-              data: agent,
-              message: `Agent created successfully from Twitter profile: ${twitterHandle}`
-            });
+            try {
+              const generalAgent = await createGeneralAgent(generalAgentData);
+              console.log("General agent created successfully:", generalAgent);
+              
+              // Convert to Agent format for frontend
+              const agent = createAgentFromTwitterProfile({
+                handle: generalAgent.handle,
+                name: generalAgent.name,
+                description: generalAgent.description || "",
+                profileImage: generalAgent.profile_picture || "/logos/twitter.png"
+              });
+              
+              // Store in memory for current session
+              dynamicAgents.push(agent);
+              
+              return res.status(200).json({ 
+                success: true, 
+                data: agent,
+                message: `Agent created successfully from Twitter profile: ${twitterHandle}`
+              });
+            } catch (supabaseError) {
+              console.error("Error creating general agent in Supabase:", supabaseError);
+              
+              // Try direct Supabase client as a last resort
+              try {
+                console.log("Attempting to create general agent with direct Supabase client");
+                const { data, error } = await supabase
+                  .from('agent_chain_general_agents')
+                  .insert(generalAgentData)
+                  .select()
+                  .single();
+                
+                if (error) throw error;
+                
+                console.log("General agent created successfully with direct client:", data);
+                
+                // Convert to Agent format for frontend
+                const agent = createAgentFromTwitterProfile({
+                  handle: data.handle,
+                  name: data.name,
+                  description: data.description || "",
+                  profileImage: data.profile_picture || "/logos/twitter.png"
+                });
+                
+                // Store in memory for current session
+                dynamicAgents.push(agent);
+                
+                return res.status(200).json({ 
+                  success: true, 
+                  data: agent,
+                  message: `Agent created successfully from Twitter profile: ${twitterHandle}`
+                });
+              } catch (directError) {
+                console.error("Error with direct Supabase client:", directError);
+                throw directError;
+              }
+            }
           } catch (innerError: any) {
             console.error("Error creating general agent:", innerError);
             await postErrorToDiscord(`Error creating general agent: ${innerError.message || "Unknown error"}`);
@@ -192,36 +236,86 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           const systemPrompt = generateCharacterSystemPrompt(characterData);
           
           // Create general agent
-          const generalAgent = await createGeneralAgent({
-            handle,
-            name,
-            description,
-            agent_type: 'character',
-            traits: traitsArray,
-            background: background || undefined,
-            system_prompt: systemPrompt,
-            is_public: true,
-            created_by: req.body.createdBy ? Number(req.body.createdBy) : undefined
-          });
-          
-          // Convert to Agent format for frontend
-          const agent = createAgentFromCharacterProfile({
-            handle: generalAgent.handle,
-            name: generalAgent.name,
-            description: generalAgent.description || "",
-            profileImage: `/avatars/${Math.floor(Math.random() * 10) + 1}.png`,
-            traits: traitsArray,
-            background: background || ""
-          });
-          
-          // Store in memory for current session
-          dynamicAgents.push(agent);
-          
-          return res.status(200).json({ 
-            success: true, 
-            data: agent,
-            message: `Agent created successfully from character profile: ${name}`
-          });
+          try {
+            const generalAgent = await createGeneralAgent({
+              handle,
+              name,
+              description,
+              agent_type: 'character',
+              traits: traitsArray,
+              background: background || undefined,
+              system_prompt: systemPrompt,
+              is_public: true,
+              created_by: req.body.createdBy ? Number(req.body.createdBy) : undefined
+            });
+            
+            // Convert to Agent format for frontend
+            const agent = createAgentFromCharacterProfile({
+              handle: generalAgent.handle,
+              name: generalAgent.name,
+              description: generalAgent.description || "",
+              profileImage: `/avatars/${Math.floor(Math.random() * 10) + 1}.png`,
+              traits: traitsArray,
+              background: background || ""
+            });
+            
+            // Store in memory for current session
+            dynamicAgents.push(agent);
+            
+            return res.status(200).json({ 
+              success: true, 
+              data: agent,
+              message: `Agent created successfully from character profile: ${name}`
+            });
+          } catch (supabaseError) {
+            console.error("Error creating character agent in Supabase:", supabaseError);
+            
+            // Try direct Supabase client as a last resort
+            try {
+              console.log("Attempting to create character agent with direct Supabase client");
+              const { data, error } = await supabase
+                .from('agent_chain_general_agents')
+                .insert({
+                  handle,
+                  name,
+                  description,
+                  agent_type: 'character',
+                  traits: traitsArray,
+                  background: background || undefined,
+                  system_prompt: systemPrompt,
+                  is_public: true,
+                  created_by: req.body.createdBy ? Number(req.body.createdBy) : undefined
+                })
+                .select()
+                .single();
+              
+              if (error) throw error;
+              
+              console.log("Character agent created successfully with direct client:", data);
+              
+              // Convert to Agent format for frontend
+              const agent = createAgentFromCharacterProfile({
+                handle: data.handle,
+                name: data.name,
+                description: data.description || "",
+                profileImage: `/avatars/${Math.floor(Math.random() * 10) + 1}.png`,
+                traits: traitsArray,
+                background: background || ""
+              });
+              
+              // Store in memory for current session
+              dynamicAgents.push(agent);
+              
+              return res.status(200).json({ 
+                success: true, 
+                data: agent,
+                message: `Agent created successfully from character profile: ${name}`
+              });
+            } catch (directError) {
+              console.error("Error with direct Supabase client:", directError);
+              throw directError;
+            }
+          }
         }
       }
       
@@ -249,47 +343,101 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
       
       case "getGeneralAgents": {
-        const { limit, agentType } = req.body;
+        console.log("Fetching general agents from all sources");
         
-        const generalAgents = await listGeneralAgents(
-          limit || 20, 
-          agentType === 'twitter' || agentType === 'character' ? agentType : undefined
-        );
-        
-        // Convert to Agent format for frontend
-        const agents = generalAgents.map(ga => {
-          if (ga.agent_type === 'twitter') {
-            return createAgentFromTwitterProfile({
-              handle: ga.handle,
-              name: ga.name,
-              description: ga.description || "",
-              profileImage: ga.profile_picture || "/logos/twitter.png"
-            });
-          } else {
-            // Handle traits properly based on its type
-            let traitsArray: string[] = [];
-            if (typeof ga.traits === 'string') {
-              traitsArray = ga.traits.split(',').map(t => t.trim());
-            } else if (Array.isArray(ga.traits)) {
-              traitsArray = ga.traits.map(t => String(t));
-            }
-            
-            return createAgentFromCharacterProfile({
-              handle: ga.handle,
-              name: ga.name,
-              description: ga.description || "",
-              profileImage: ga.profile_picture || `/avatars/${Math.floor(Math.random() * 10) + 1}.png`,
-              traits: traitsArray,
-              background: ga.background || ""
-            });
+        try {
+          // Create a Supabase client that can bypass RLS
+          const supabase = createApiSupabaseClient();
+          
+          // 1. Fetch agents from agent_chain_general_agents table
+          const { data: generalAgents, error: generalAgentsError } = await supabase
+            .from('agent_chain_general_agents')
+            .select('*')
+            .eq('is_public', true);
+          
+          if (generalAgentsError) {
+            console.error("Error fetching general agents:", generalAgentsError);
+            throw generalAgentsError;
           }
-        });
-        
-        return res.status(200).json({ 
-          success: true, 
-          data: agents,
-          message: `Retrieved ${agents.length} general agents`
-        });
+          
+          // 2. Fetch agents from agent_chain_users table (Twitter-based agents)
+          const { data: userAgents, error: userAgentsError } = await supabase
+            .from('agent_chain_users')
+            .select('*');
+          
+          if (userAgentsError) {
+            console.error("Error fetching user agents:", userAgentsError);
+            throw userAgentsError;
+          }
+          
+          // 3. Convert general agents to Agent format
+          const formattedGeneralAgents = generalAgents?.map(agent => {
+            return {
+              id: agent.handle,
+              name: agent.name,
+              description: agent.description || "",
+              category: agent.agent_type === 'twitter' ? 'Social' : 'Character',
+              chains: ['ETH', 'Polygon'],
+              version: '1.0.0',
+              score: 4.5,
+              imageUrl: agent.profile_picture || "/logos/aiagent-bg.png",
+              contractAddress: `0x${agent.handle}`,
+              twitter: agent.agent_type === 'twitter' ? `@${agent.twitter_handle || agent.handle}` : undefined,
+              stats: {
+                users: 0,
+                transactions: 0,
+                volume: 0,
+              },
+              features: agent.agent_type === 'twitter' 
+                ? ['Twitter Analysis', 'Personality Mirroring', 'Content Generation']
+                : ['Custom Personality', 'Role Playing', 'Interactive Conversations'],
+              agentType: agent.agent_type,
+              source: 'general_agents'
+            };
+          }) || [];
+          
+          // 4. Convert user agents to Agent format
+          const formattedUserAgents = userAgents?.map(user => {
+            return {
+              id: user.handle,
+              name: user.display_name || user.handle,
+              description: user.bio || "",
+              category: 'Social',
+              chains: ['ETH', 'Polygon'],
+              version: '1.0.0',
+              score: 4.5,
+              imageUrl: user.profile_picture || "/logos/twitter.png",
+              contractAddress: `0x${user.handle}`,
+              twitter: `@${user.handle}`,
+              stats: {
+                users: 0,
+                transactions: 0,
+                volume: 0,
+              },
+              features: ['Twitter Analysis', 'Personality Mirroring', 'Content Generation'],
+              agentType: 'twitter',
+              source: 'agent_chain_users'
+            };
+          }) || [];
+          
+          // 5. Combine all agents
+          const allAgents = [...formattedGeneralAgents, ...formattedUserAgents];
+          
+          // 6. Add dynamic agents from memory
+          const combinedAgents = [...allAgents, ...dynamicAgents];
+          
+          return res.status(200).json({
+            success: true,
+            data: combinedAgents,
+            message: "Successfully fetched agents from all sources"
+          });
+        } catch (error: any) {
+          console.error("Error in getGeneralAgents:", error);
+          return res.status(500).json({
+            success: false,
+            error: `Failed to fetch agents: ${error.message || "Unknown error"}`
+          });
+        }
       }
       
       case "generateResponse": {
@@ -413,7 +561,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         } catch (error) {
           return res.status(404).json({ 
             success: false, 
-            error: `Agent not found: ${agentId}` 
+            error: `Agent not found: ${agentId}`
           });
         }
       }
@@ -431,4 +579,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       error: error.message || "An unknown error occurred" 
     });
   }
-} 
+}
