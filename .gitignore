@@ -110,7 +110,8 @@ dist
 CLEANUP.md
 SUPABASE_TEST.md
 SUPABASE_SETUP.md
-.md
+README-TWITTER-AGENT.md
+
 
 scripts/test-general-agents.js
 scripts/check-supabase.js
