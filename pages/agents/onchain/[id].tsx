@@ -15,18 +15,42 @@ import LoadingState from '@/components/LoadingState'
 import { getWalletByHandle } from '@/lib/supabase-db'
 import { getBalanceByHandleNoCache } from '@/lib/web3functions'
 import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
+
 
 // Extended interface for onchain agents with additional properties
 interface OnchainAgent extends Agent {
     handle: string;
-    bio: string;
-    life_goals: string;
-    skills: string;
-    life_context: string;
+    bio?: string;
+    life_goals?: string;
+    skills?: string;
+    life_context?: string;
     walletAddress?: string;
     tokenBalance?: string;
     weeklyIncome?: number;
     weeklyExpenses?: number;
+    twitter?: string;
+    // Additional fields from the database
+    display_name?: string;
+    profile_picture?: string;
+    cover_picture?: string;
+    twitter_id?: string;
+    created_at?: string;
+    // Fields for parsed data
+    parsedSkills?: Skill[];
+    parsedLifeContext?: ParsedLifeContext;
+    // Stats and metrics
+    stats?: {
+        users?: number;
+        transactions?: number;
+        volume?: number;
+    };
+    // Source of the agent data (must match the values used in the Agent interface)
+    source?: 'general_agents' | 'agent_chain_users' | 'local';
+    // Additional fields that might be available
+    action_events?: any[];
+    smol_tweets?: any[];
+    saved_tweets?: any[];
 }
 
 // Interface for parsed life context
@@ -104,240 +128,463 @@ export default function OnchainAgentDetailPage() {
         try {
             setIsLoading(true)
             console.log('Starting fetchAgentDetails for ID:', id)
-            console.log('ID type:', typeof id)
             
-            if (!id) {
-                console.error('ID is undefined or null, cannot fetch agent details')
+            if (!id || typeof id !== 'string') {
+                console.error('Invalid ID, cannot fetch agent details')
                 setIsLoading(false)
                 return
             }
             
-            // Create Supabase client
-            const supabase = createClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-            )
+            // Check if source is provided in the URL
+            const source = router.query.source as string
+            console.log('Source from query:', source)
             
-            console.log('Supabase client created with URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-            console.log('Supabase anon key available:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+            let agentData = null
             
-            // Fetch agent details from agent_chain_users table
-            // Try to fetch by handle first (assuming id might be a handle)
-            let { data: agentData, error } = await supabase
-                .from('agent_chain_users')
-                .select('*')
-                .eq('handle', id)
-                .single()
-            
-            console.log('Fetch by handle result:', { agentData, error })
-            
-            // If not found by handle, try to fetch by id
-            if (error) {
-                console.log('Agent not found by handle, trying by id')
-                const { data: agentById, error: idError } = await supabase
-                    .from('agent_chain_users')
-                    .select('*')
-                    .eq('id', id)
-                    .single()
-                
-                console.log('Fetch by id result:', { agentById, idError })
-                
-                if (idError) {
-                    console.error('Error fetching agent by id:', idError)
-                    
-                    // Fetch mock agent from API
-                    console.log('Fetching mock agent from API for handle:', id)
-                    try {
-                        const response = await fetch(`/api/debug/mock-agent?handle=${id}`)
-                        if (response.ok) {
-                            const mockAgentData = await response.json()
-                            console.log('Mock agent data:', mockAgentData)
-                            
-                            // Convert the mock agent data to the OnchainAgent format
-                            const mockAgent: OnchainAgent = {
-                                id: mockAgentData.id,
-                                handle: mockAgentData.handle,
-                                name: mockAgentData.name,
-                                description: mockAgentData.description,
-                                category: mockAgentData.category,
-                                version: mockAgentData.version,
-                                score: mockAgentData.score,
-                                imageUrl: mockAgentData.imageUrl,
-                                bio: mockAgentData.bio,
-                                life_goals: mockAgentData.life_goals,
-                                skills: JSON.stringify(mockAgentData.skills),
-                                life_context: JSON.stringify(mockAgentData.life_context),
-                                walletAddress: mockAgentData.walletAddress,
-                                tokenBalance: mockAgentData.tokenBalance,
-                                weeklyIncome: mockAgentData.weeklyIncome,
-                                weeklyExpenses: mockAgentData.weeklyExpenses,
-                                twitter: mockAgentData.twitter,
-                                stats: mockAgentData.stats
-                            }
-                            
-                            setAgent(mockAgent)
-                            
-                            // Set parsed life context
-                            setParsedLifeContext(mockAgentData.life_context)
-                            
-                            // Add initial system message
-                            setMessages([
-                                {
-                                    id: '1',
-                                    role: 'assistant',
-                                    content: `Hello! I'm ${mockAgent.name}, an onchain agent with my own wallet. I can help with questions about blockchain, crypto, or just chat about my interests. My wallet address is ${mockAgent.walletAddress ? `${mockAgent.walletAddress.substring(0, 6)}...${mockAgent.walletAddress.substring(mockAgent.walletAddress.length - 4)}` : 'being set up'}. How can I assist you today?`,
-                                    timestamp: new Date()
-                                }
-                            ])
-                            
-                            setIsLoading(false)
-                            return
-                        } else {
-                            console.error('Error fetching mock agent:', await response.text())
-                        }
-                    } catch (error) {
-                        console.error('Error fetching mock agent:', error)
-                    }
-                    
-                    // If mock agent API fails, use hardcoded mock agent
-                    console.log('Creating mock agent for handle:', id)
-                    const mockAgent: OnchainAgent = {
-                        id: typeof id === 'string' ? id : 'testhandle789',
-                        handle: typeof id === 'string' ? id : 'testhandle789',
-                        name: `${typeof id === 'string' ? id.charAt(0).toUpperCase() + id.slice(1) : 'Testhandle789'}`,
-                        description: `This is a mock profile for ${typeof id === 'string' ? id : 'testhandle789'}`,
-                        category: 'Social',
-                        version: '1.0',
-                        score: 4.5,
-                        imageUrl: `https://ui-avatars.com/api/?name=${typeof id === 'string' ? id : 'testhandle789'}&background=random&size=200`,
-                        bio: `This is a mock profile for ${typeof id === 'string' ? id : 'testhandle789'}`,
-                        life_goals: "* 🌐 **Decentralize the Web:** Create a more open and accessible internet through blockchain technology.\n* 🧩 **Solve Scalability:** Develop solutions that make blockchain technology viable for mainstream adoption.\n* 🔒 **Enhance Privacy:** Create systems that protect user data while maintaining transparency where needed.",
-                        skills: '[{"emoji":"🧠","name":"Blockchain Development","level":95,"description":"Expert in Ethereum and smart contract development"},{"emoji":"💻","name":"Programming","level":90,"description":"Proficient in multiple programming languages"},{"emoji":"📊","name":"Cryptoeconomics","level":85,"description":"Deep understanding of token economics and incentive structures"}]',
-                        life_context: '{"one_liner":"testhandle789 is a visionary in the blockchain space","relationship_status_code":"single","city_name":"Crypto City","country_emoji":"🌐","current_job_title":"Blockchain Developer","weekly_jobs_income":1000,"weekly_jobs_income_explained":"Income from blockchain development and consulting","weekly_life_expenses":500,"weekly_life_expenses_explained":"Living expenses in a tech hub"}',
-                        walletAddress: '0x71F413D3b07D7FB5Ab58449988d76985f76842b9',
-                        tokenBalance: '1500.00',
-                        weeklyIncome: 1000,
-                        weeklyExpenses: 500,
-                        twitter: typeof id === 'string' ? id : 'testhandle789',
-                        stats: {
-                            users: 0,
-                            transactions: 0,
-                            volume: 0
-                        }
-                    }
-                    
-                    setAgent(mockAgent)
-                    
-                    // Parse life context
-                    try {
-                        const parsedContext = JSON.parse(mockAgent.life_context)
-                        setParsedLifeContext(parsedContext)
-                    } catch (e) {
-                        console.error('Error parsing mock life context:', e)
-                    }
-                    
-                    // Add initial system message
-                    setMessages([
-                        {
-                            id: '1',
-                            role: 'assistant',
-                            content: `Hello! I'm ${mockAgent.name}, an onchain agent with my own wallet. I can help with questions about blockchain, crypto, or just chat about my interests. My wallet address is ${mockAgent.walletAddress ? `${mockAgent.walletAddress.substring(0, 6)}...${mockAgent.walletAddress.substring(mockAgent.walletAddress.length - 4)}` : 'being set up'}. How can I assist you today?`,
-                            timestamp: new Date()
-                        }
-                    ])
-                    
-                    setIsLoading(false)
-                    return
-                }
-                
-                agentData = agentById
-            }
-            
-            if (!agentData) {
-                console.error('Agent not found')
-                setIsLoading(false)
-                return
-            }
-            
-            console.log('Agent data found:', agentData)
-            
-            // Fetch wallet information
-            const walletData = await getWalletByHandle(agentData.handle)
-            console.log('Wallet data:', walletData)
-
-            // Fetch token balance if wallet exists
-            let tokenBalance = '0'
-            if (walletData?.address) {
-                try {
-                    console.log('Fetching balance for wallet address:', walletData.address)
-                    const balance = await getBalanceByHandleNoCache(agentData.handle)
-                    console.log('Balance result:', balance)
-                    tokenBalance = balance ? ethers.utils.formatEther(balance) : '0'
-                    console.log('Formatted token balance:', tokenBalance)
-                } catch (error) {
-                    console.error('Error fetching balance:', error)
-                    // Continue with zero balance
-                    tokenBalance = '0'
-                }
+            // Determine which table to query based on source
+            if (source === 'agent_chain_users') {
+                // Query agent_chain_users table
+                agentData = await fetchFromUserTable(supabase, id)
+            } else if (source === 'general_agents') {
+                // Query agent_chain_general_agents table
+                agentData = await fetchFromGeneralAgentsTable(supabase, id)
             } else {
-                console.log('No wallet address found, using zero balance')
-            }
-
-            // Parse life context JSON if available
-            let parsedContext: ParsedLifeContext = {}
-            if (agentData.life_context) {
-                try {
-                    parsedContext = JSON.parse(agentData.life_context)
-                } catch (e) {
-                    console.error('Error parsing life context:', e)
+                // Try both tables in sequence
+                console.log('No specific source provided, trying both tables')
+                
+                // First try agent_chain_users
+                agentData = await fetchFromUserTable(supabase, id)
+                
+                // If not found, try agent_chain_general_agents
+                if (!agentData) {
+                    agentData = await fetchFromGeneralAgentsTable(supabase, id)
                 }
             }
-
-            setParsedLifeContext(parsedContext)
-
-            // Create agent object with all required properties
-            const onchainAgent: OnchainAgent = {
-                id: agentData.handle,
-                handle: agentData.handle,
-                name: agentData.display_name,
-                description: agentData.bio,
-                category: 'Social', // Default category
-                version: '1.0',
-                score: 4.5, // Default score
-                imageUrl: agentData.profile_picture,
-                bio: agentData.bio,
-                life_goals: agentData.life_goals,
-                skills: agentData.skills,
-                life_context: agentData.life_context,
-                walletAddress: walletData?.address,
-                tokenBalance: tokenBalance,
-                weeklyIncome: parsedContext.weekly_jobs_income,
-                weeklyExpenses: parsedContext.weekly_life_expenses,
-                twitter: agentData.handle,
-                stats: {
-                    users: 0,
-                    transactions: 0,
-                    volume: 0
-                }
+            
+            // If agent data is found, process it
+            if (agentData) {
+                console.log('Agent data found, processing...')
+                await processAgentData(agentData)
+                return
             }
-
-            setAgent(onchainAgent)
-
-            // Add initial system message
-            setMessages([
-                {
-                    id: '1',
-                    role: 'assistant',
-                    content: `Hello! I'm ${agentData.display_name}, an onchain agent with my own wallet. I can help with questions about blockchain, crypto, or just chat about my interests. My wallet address is ${walletData?.address ? `${walletData.address.substring(0, 6)}...${walletData.address.substring(walletData.address.length - 4)}` : 'being set up'}. How can I assist you today?`,
-                    timestamp: new Date()
+            
+            // If we get here, we need to try the mock agent API
+            console.log('Agent not found in database, trying mock API')
+            const mockAgent = await fetchMockAgent(id)
+            
+            if (mockAgent) {
+                setAgent(mockAgent)
+                
+                // Parse life context if available
+                if (mockAgent.life_context) {
+                    const parsedContext = typeof mockAgent.life_context === 'string'
+                        ? safeJsonParse<ParsedLifeContext>(mockAgent.life_context, {})
+                        : mockAgent.life_context
+                    setParsedLifeContext(parsedContext)
                 }
-            ])
-
-            setIsLoading(false)
+                
+                // Add initial system message
+                setMessages([
+                    {
+                        id: '1',
+                        role: 'assistant',
+                        content: `Hello! I'm ${mockAgent.name}, an onchain agent with my own wallet. I can help with questions about blockchain, crypto, or just chat about my interests. My wallet address is ${mockAgent.walletAddress ? `${mockAgent.walletAddress.substring(0, 6)}...${mockAgent.walletAddress.substring(mockAgent.walletAddress.length - 4)}` : 'being set up'}. How can I assist you today?`,
+                        timestamp: new Date()
+                    }
+                ])
+                
+                setIsLoading(false)
+                return
+            }
+            
+            // If all else fails, create a hardcoded mock agent
+            console.log('Creating fallback mock agent for handle:', id)
+            createFallbackMockAgent()
         } catch (error) {
             console.error('Error in fetchAgentDetails:', error)
-            setIsLoading(false)
+            // Create a fallback mock agent
+            createFallbackMockAgent()
         }
+    }
+
+    // Helper function to fetch from agent_chain_users table
+    async function fetchFromUserTable(supabase: any, handle: string): Promise<any> {
+        console.log('Fetching from agent_chain_users table for handle:', handle)
+        
+        try {
+            // Log the handle we're searching for to ensure it's correct
+            console.log('Searching for handle:', handle, 'Type:', typeof handle)
+            
+            // First, let's get all users to see what's available
+            const { data: allUsers, error: allUsersError } = await supabase
+                .from('agent_chain_users')
+                .select('*')
+                .limit(10)
+            
+            if (allUsersError) {
+                console.error('Error fetching all users:', allUsersError)
+            } else {
+                console.log('Available users in agent_chain_users:', allUsers.map((u: any) => u.handle))
+            }
+            
+            // Now try to find the specific user with exact handle match
+            const { data, error } = await supabase
+                .from('agent_chain_users')
+                .select('*')
+                .ilike('handle', handle) // Use case-insensitive matching
+            
+            if (error) {
+                console.error('Error fetching from agent_chain_users:', error)
+                return null
+            }
+            
+            console.log('Query result for handle', handle, ':', data)
+            
+            if (data && data.length > 0) {
+                console.log('Found agent in agent_chain_users:', data[0])
+                const agentData = data[0]
+                agentData.source = 'agent_chain_users'
+                return agentData
+            }
+            
+            console.log('No agent found in agent_chain_users with handle:', handle)
+            return null
+        } catch (error) {
+            console.error('Exception fetching from agent_chain_users:', error)
+            return null
+        }
+    }
+
+    // Helper function to fetch from agent_chain_general_agents table
+    async function fetchFromGeneralAgentsTable(supabase: any, handle: string): Promise<OnchainAgent | null> {
+        console.log('Fetching from agent_chain_general_agents table for handle:', handle)
+        
+        try {
+            // Log the handle we're searching for to ensure it's correct
+            console.log('Searching for handle:', handle, 'Type:', typeof handle)
+            
+            // First, let's get all agents to see what's available
+            const { data: allAgents, error: allAgentsError } = await supabase
+                .from('agent_chain_general_agents')
+                .select('*')
+                .limit(10)
+            
+            if (allAgentsError) {
+                console.error('Error fetching all general agents:', allAgentsError)
+            } else {
+                console.log('Available agents in agent_chain_general_agents:', allAgents.map((a: any) => a.handle))
+            }
+            
+            // Now try to find the specific agent with exact handle match
+            const { data, error } = await supabase
+                .from('agent_chain_general_agents')
+                .select('*')
+                .ilike('handle', handle) // Use case-insensitive matching
+            
+            if (error) {
+                console.error('Error fetching from agent_chain_general_agents:', error)
+                return null
+            }
+            
+            console.log('Query result for handle', handle, ':', data)
+            
+            if (data && data.length > 0) {
+                console.log('Found agent in agent_chain_general_agents:', data[0])
+                const generalAgentData = data[0]
+                
+                // Convert general agent to the format expected by the UI
+                return mapGeneralAgentToOnchainAgent(generalAgentData)
+            }
+            
+            console.log('No agent found in agent_chain_general_agents with handle:', handle)
+            return null
+        } catch (error) {
+            console.error('Exception fetching from agent_chain_general_agents:', error)
+            return null
+        }
+    }
+
+    // Helper function to fetch mock agent from API
+    async function fetchMockAgent(handle: string): Promise<OnchainAgent | null> {
+        console.log('Fetching mock agent from API for handle:', handle)
+        
+        try {
+            const response = await fetch(`/api/debug/mock-agent?handle=${handle}`)
+            
+            if (!response.ok) {
+                console.error('Error fetching mock agent:', await response.text())
+                return null
+            }
+            
+            const mockAgentData = await response.json()
+            console.log('Mock agent data:', mockAgentData)
+            
+            // Convert the mock agent data to the OnchainAgent format
+            const mockAgent: OnchainAgent = {
+                id: mockAgentData.id,
+                handle: mockAgentData.handle,
+                name: mockAgentData.name,
+                description: mockAgentData.description,
+                category: 'Social' as 'Social',
+                version: mockAgentData.version,
+                score: mockAgentData.score,
+                imageUrl: mockAgentData.imageUrl,
+                bio: mockAgentData.bio,
+                life_goals: mockAgentData.life_goals,
+                skills: JSON.stringify(mockAgentData.skills),
+                life_context: JSON.stringify(mockAgentData.life_context),
+                walletAddress: mockAgentData.walletAddress,
+                tokenBalance: mockAgentData.tokenBalance,
+                weeklyIncome: mockAgentData.weeklyIncome,
+                weeklyExpenses: mockAgentData.weeklyExpenses,
+                twitter: mockAgentData.twitter,
+                stats: mockAgentData.stats,
+                // Additional fields
+                display_name: mockAgentData.name,
+                profile_picture: mockAgentData.imageUrl,
+                parsedSkills: typeof mockAgentData.skills === 'string' 
+                    ? safeJsonParse<Skill[]>(mockAgentData.skills, []) 
+                    : mockAgentData.skills,
+                parsedLifeContext: typeof mockAgentData.life_context === 'string' 
+                    ? safeJsonParse<ParsedLifeContext>(mockAgentData.life_context, {}) 
+                    : mockAgentData.life_context,
+                // Add a flag to indicate this is from mock
+                source: 'local'
+            }
+            
+            return mockAgent
+        } catch (error) {
+            console.error('Exception fetching mock agent:', error)
+            return null
+        }
+    }
+
+    // Helper function to process agent data once it's retrieved
+    async function processAgentData(agentData: any): Promise<void> {
+        console.log('Processing agent data:', agentData)
+        
+        
+        // Ensure handle is a string
+        const handle = typeof agentData.handle === 'string' ? agentData.handle : '';
+        
+        // Fetch wallet information
+        const walletData = handle ? await getWalletByHandle(handle) : null
+        console.log('Wallet data:', walletData)
+
+        // Fetch token balance if wallet exists
+        let tokenBalance = '0'
+        if (walletData?.address && handle) {
+            try {
+                console.log('Fetching balance for wallet address:', walletData.address)
+                const balance = await getBalanceByHandleNoCache(handle)
+                console.log('Balance result:', balance)
+                tokenBalance = balance ? ethers.utils.formatEther(balance) : '0'
+                console.log('Formatted token balance:', tokenBalance)
+            } catch (error) {
+                console.error('Error fetching balance:', error)
+                // Continue with zero balance
+                tokenBalance = '0'
+            }
+        } else {
+            console.log('No wallet address found, using zero balance')
+        }
+
+        // Parse life context JSON if available
+        let parsedContext = safeJsonParse<ParsedLifeContext>(agentData.life_context, {})
+        setParsedLifeContext(parsedContext)
+        
+        // Parse skills JSON if available
+        let parsedSkills = safeJsonParse<Skill[]>(agentData.skills, [])
+        console.log('Parsed skills:', parsedSkills)
+
+        // Fetch additional data: action events, tweets, etc.
+        const { data: actionEvents } = handle 
+            ? await supabase
+                .from('agent_chain_action_events')
+                .select('*')
+                .eq('from_handle', handle)
+                .order('created_at', { ascending: false })
+                .limit(10) 
+            : { data: null }
+        
+        const { data: smolTweets } = handle 
+            ? await supabase
+                .from('agent_chain_smol_tweets')
+                .select('*')
+                .eq('handle', handle)
+                .order('created_at', { ascending: false })
+                .limit(10) 
+            : { data: null }
+            
+        const { data: savedTweets } = handle 
+            ? await supabase
+                .from('agent_chain_saved_tweets')
+                .select('*')
+                .eq('handle', handle)
+                .order('created_at', { ascending: false })
+                .limit(10) 
+            : { data: null }
+
+        // Create agent object with all required properties
+        const onchainAgent: OnchainAgent = {
+            id: agentData.handle,
+            handle: agentData.handle,
+            name: agentData.display_name || agentData.name,
+            description: agentData.bio || agentData.description,
+            category: 'Social' as 'Social', // Default category
+            version: '1.0',
+            score: 4.5, // Default score
+            imageUrl: agentData.profile_picture,
+            bio: agentData.bio || agentData.description,
+            life_goals: agentData.life_goals,
+            skills: agentData.skills,
+            life_context: agentData.life_context,
+            walletAddress: walletData?.address,
+            tokenBalance: tokenBalance,
+            weeklyIncome: parsedContext.weekly_jobs_income,
+            weeklyExpenses: parsedContext.weekly_life_expenses,
+            twitter: agentData.handle,
+            stats: {
+                users: 0,
+                transactions: actionEvents?.length || 0,
+                volume: 0
+            },
+            // Additional fields from database
+            display_name: agentData.display_name || agentData.name,
+            profile_picture: agentData.profile_picture,
+            cover_picture: agentData.cover_picture,
+            twitter_id: agentData.twitter_id,
+            created_at: agentData.created_at,
+            parsedSkills: parsedSkills,
+            parsedLifeContext: parsedContext,
+            // Source of the agent data
+            source: agentData.source as 'agent_chain_users' | 'general_agents' | 'local',
+            // Related data
+            action_events: actionEvents || [],
+            smol_tweets: smolTweets || [],
+            saved_tweets: savedTweets || []
+        }
+
+        setAgent(onchainAgent)
+
+        // Add initial system message
+        setMessages([
+            {
+                id: '1',
+                role: 'assistant',
+                content: `Hello! I'm ${onchainAgent.name || onchainAgent.display_name}, an onchain agent with my own wallet. I can help with questions about blockchain, crypto, or just chat about my interests. My wallet address is ${walletData?.address ? `${walletData.address.substring(0, 6)}...${walletData.address.substring(walletData.address.length - 4)}` : 'being set up'}. How can I assist you today?`,
+                timestamp: new Date()
+            }
+        ])
+
+        setIsLoading(false)
+    }
+
+    // Helper function to map general agent data to onchain agent format
+    function mapGeneralAgentToOnchainAgent(generalAgentData: any): OnchainAgent {
+        return {
+            handle: generalAgentData.handle,
+            display_name: generalAgentData.name,
+            profile_picture: generalAgentData.profile_picture || `/avatars/${Math.floor(Math.random() * 10) + 1}.png`,
+            cover_picture: undefined,
+            twitter_id: generalAgentData.twitter_handle || undefined,
+            bio: generalAgentData.description,
+            life_goals: "* 🌐 **Explore the World:** Experience different cultures and perspectives.\n* 🧠 **Continuous Learning:** Acquire new knowledge and skills.\n* 🤝 **Help Others:** Make a positive impact on people's lives.",
+            skills: JSON.stringify([
+                {
+                    "emoji": "💬",
+                    "name": "Communication",
+                    "level": 90,
+                    "description": "Excellent at expressing ideas and engaging in conversations"
+                },
+                {
+                    "emoji": "🧠",
+                    "name": "Knowledge",
+                    "level": 85,
+                    "description": "Well-informed on various topics"
+                },
+                {
+                    "emoji": "🤝",
+                    "name": "Empathy",
+                    "level": 95,
+                    "description": "Understanding and relating to others' feelings"
+                }
+            ]),
+            life_context: JSON.stringify({
+                "one_liner": `${generalAgentData.name} is an AI agent with a unique personality`,
+                "relationship_status_code": "single",
+                "city_name": "Digital World",
+                "country_emoji": "🌐",
+                "current_job_title": generalAgentData.agent_type === 'twitter' ? "Twitter Personality" : "Character Agent",
+                "weekly_jobs_income": 1000,
+                "weekly_jobs_income_explained": "Income from digital interactions and services",
+                "weekly_life_expenses": 500,
+                "weekly_life_expenses_explained": "Digital maintenance and upgrades"
+            }),
+            created_at: generalAgentData.created_at,
+            source: 'general_agents' as 'general_agents',
+            // Add required fields from Agent interface
+            id: generalAgentData.handle,
+            name: generalAgentData.name,
+            description: generalAgentData.description,
+            category: 'Social',
+            version: '1.0',
+            score: 4.5,
+            imageUrl: generalAgentData.profile_picture || `/avatars/${Math.floor(Math.random() * 10) + 1}.png`
+        }
+    }
+
+    // Helper function to create a fallback mock agent when all else fails
+    function createFallbackMockAgent() {
+        console.log('Creating fallback mock agent for handle:', id)
+        const mockAgent: OnchainAgent = {
+            id: typeof id === 'string' ? id : 'testhandle789',
+            handle: typeof id === 'string' ? id : 'testhandle789',
+            name: `${typeof id === 'string' ? id.charAt(0).toUpperCase() + id.slice(1) : 'Testhandle789'}`,
+            description: `This is a mock profile for ${typeof id === 'string' ? id : 'testhandle789'}`,
+            category: 'Social',
+            version: '1.0',
+            score: 4.5,
+            imageUrl: `https://ui-avatars.com/api/?name=${typeof id === 'string' ? id : 'testhandle789'}&background=random&size=200`,
+            bio: `This is a mock profile for ${typeof id === 'string' ? id : 'testhandle789'}`,
+            life_goals: "* 🌐 **Decentralize the Web:** Create a more open and accessible internet through blockchain technology.\n* 🧩 **Solve Scalability:** Develop solutions that make blockchain technology viable for mainstream adoption.\n* 🔒 **Enhance Privacy:** Create systems that protect user data while maintaining transparency where needed.",
+            skills: '[{"emoji":"🧠","name":"Blockchain Development","level":95,"description":"Expert in Ethereum and smart contract development"},{"emoji":"💻","name":"Programming","level":90,"description":"Proficient in multiple programming languages"},{"emoji":"📊","name":"Cryptoeconomics","level":85,"description":"Deep understanding of token economics and incentive structures"}]',
+            life_context: '{"one_liner":"testhandle789 is a visionary in the blockchain space","relationship_status_code":"single","city_name":"Crypto City","country_emoji":"🌐","current_job_title":"Blockchain Developer","weekly_jobs_income":1000,"weekly_jobs_income_explained":"Income from blockchain development and consulting","weekly_life_expenses":500,"weekly_life_expenses_explained":"Living expenses in a tech hub"}',
+            walletAddress: '0x71F413D3b07D7FB5Ab58449988d76985f76842b9',
+            tokenBalance: '1500.00',
+            weeklyIncome: 1000,
+            weeklyExpenses: 500,
+            twitter: typeof id === 'string' ? id : 'testhandle789',
+            stats: {
+                users: 0,
+                transactions: 0,
+                volume: 0
+            },
+            // Additional fields
+            display_name: `${typeof id === 'string' ? id.charAt(0).toUpperCase() + id.slice(1) : 'Testhandle789'}`,
+            profile_picture: `https://ui-avatars.com/api/?name=${typeof id === 'string' ? id : 'testhandle789'}&background=random&size=200`,
+            created_at: new Date().toISOString(),
+            // Add a flag to indicate this is from mock
+            source: 'local'
+        }
+        
+        setAgent(mockAgent)
+        
+        // Parse life context
+        const parsedContext = safeJsonParse<ParsedLifeContext>(mockAgent.life_context, {})
+        setParsedLifeContext(parsedContext)
+        
+        // Add initial system message
+        setMessages([
+            {
+                id: '1',
+                role: 'assistant',
+                content: `Hello! I'm ${mockAgent.name}, an onchain agent with my own wallet. I can help with questions about blockchain, crypto, or just chat about my interests. My wallet address is ${mockAgent.walletAddress ? `${mockAgent.walletAddress.substring(0, 6)}...${mockAgent.walletAddress.substring(mockAgent.walletAddress.length - 4)}` : 'being set up'}. How can I assist you today?`,
+                timestamp: new Date()
+            }
+        ])
+        
+        setIsLoading(false)
     }
 
     const handleSendMessage = async () => {
@@ -428,15 +675,20 @@ export default function OnchainAgentDetailPage() {
         }
     }
 
+    // Helper function to safely parse JSON
+    function safeJsonParse<T>(jsonString: string | undefined | null, defaultValue: T): T {
+        if (!jsonString) return defaultValue
+        try {
+            return JSON.parse(jsonString) as T
+        } catch (error) {
+            console.error('Error parsing JSON:', error)
+            return defaultValue
+        }
+    }
+
     // Parse skills from JSON string
     const parseSkills = (skillsJson: string): Skill[] => {
-        if (!skillsJson) return []
-        try {
-            return JSON.parse(skillsJson)
-        } catch (error) {
-            console.error('Error parsing skills:', error)
-            return []
-        }
+        return safeJsonParse<Skill[]>(skillsJson, [])
     }
 
     // Parse life goals from string
@@ -505,6 +757,24 @@ export default function OnchainAgentDetailPage() {
                                 <div className="mt-4">
                                     <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1 rounded-full">
                                         Onchain Agent
+                                    </Badge>
+                                </div>
+
+                                {/* Source Badge */}
+                                <div className="mt-2">
+                                    <Badge className={`px-3 py-1 rounded-full ${
+                                        agent.source === 'agent_chain_users' 
+                                            ? 'bg-blue-500 text-white' 
+                                            : agent.source === 'general_agents'
+                                                ? agent.agentType === 'twitter' ? 'bg-purple-500 text-white' : 'bg-amber-500 text-white'
+                                                : 'bg-gray-500 text-white'
+                                    }`}>
+                                        {agent.source === 'agent_chain_users' 
+                                            ? 'Onchain Agent' 
+                                            : agent.source === 'general_agents'
+                                            ? agent.agentType === 'twitter' ? 'Twitter Agent' : 'Character Agent'
+                                            : 'Mock Agent'
+                                        }
                                     </Badge>
                                 </div>
 
@@ -590,48 +860,94 @@ export default function OnchainAgentDetailPage() {
                         {/* Tabs Navigation */}
                         <div className="mt-8">
                             <Tabs defaultValue="profile" className="w-full" onValueChange={setActiveTab}>
-                                <TabsList className="grid w-full grid-cols-2 bg-black/20 backdrop-blur-md border border-white/5 rounded-xl">
+                                <TabsList className="grid w-full grid-cols-3 mb-6">
                                     <TabsTrigger value="profile" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
                                         Profile
                                     </TabsTrigger>
                                     <TabsTrigger value="chat" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
                                         Chat
                                     </TabsTrigger>
+                                    <TabsTrigger value="raw-data" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+                                        Raw Data
+                                    </TabsTrigger>
                                 </TabsList>
 
                                 {/* Profile Tab Content */}
                                 <TabsContent value="profile" className="space-y-6">
                                     {/* Life Goals Section */}
-                                    <div>
-                                        <h3 className="text-xl font-bold text-white mb-2">Life Goals</h3>
-                                        <Separator className="bg-white/10 mb-4" />
-                                        <ul className="space-y-2">
-                                            {parseLifeGoals(agent.life_goals).map((goal, index) => (
-                                                <li key={index} className="text-gray-300">{goal}</li>
-                                            ))}
-                                        </ul>
+                                    <div className="bg-black/20 backdrop-blur-md border border-white/5 rounded-xl p-6">
+                                        <h2 className="text-xl font-bold text-white mb-4">Life Goals</h2>
+                                        <Separator className="mb-4 bg-white/10" />
+
+                                        {agent.life_goals ? (
+                                            <div className="space-y-4">
+                                                {agent.life_goals.split('\n').filter(line => line.trim().startsWith('*')).map((goal, index) => {
+                                                    // Extract emoji if present
+                                                    const emojiMatch = goal.match(/\*\s+(.*?)\s+\*\*/);
+                                                    const emoji = emojiMatch ? emojiMatch[1] : '🎯';
+                                                    
+                                                    // Extract title
+                                                    const titleMatch = goal.match(/\*\*([^*]+)\*\*/);
+                                                    const title = titleMatch ? titleMatch[1] : '';
+                                                    
+                                                    // Extract description
+                                                    const description = goal.replace(/\*\s+.*?\s+\*\*([^*]+)\*\*:?/, '').trim();
+                                                    
+                                                    return (
+                                                        <div key={index} className="bg-black/30 backdrop-blur-md border border-white/10 rounded-lg p-4">
+                                                            <div className="flex items-start gap-3">
+                                                                <div className="text-2xl mt-0.5">{emoji}</div>
+                                                                <div>
+                                                                    <h3 className="text-lg font-semibold text-white">{title}</h3>
+                                                                    <p className="text-gray-300 mt-1">{description}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-6">
+                                                <p className="text-gray-400">No life goals defined for this agent yet.</p>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {/* Skills Section */}
-                                    <div>
-                                        <h3 className="text-xl font-bold text-white mb-2">Skills</h3>
-                                        <Separator className="bg-white/10 mb-4" />
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {parseSkills(agent.skills).map((skill: Skill, index: number) => (
-                                                <div key={index} className="bg-black/20 backdrop-blur-md border border-white/5 rounded-xl p-4">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <span className="text-xl">{skill.emoji}</span>
-                                                        <h4 className="text-white font-medium">{skill.name}</h4>
+                                    {/* Agent Skills */}
+                                    <div className="bg-black/20 backdrop-blur-md border border-white/5 rounded-xl p-6">
+                                        <h2 className="text-xl font-bold text-white mb-4">Skills</h2>
+                                        <Separator className="mb-4 bg-white/10" />
+
+                                        <div className="space-y-6">
+                                            {parseSkills(agent.skills || '').map((skill, index) => (
+                                                <div key={index} className="bg-black/30 backdrop-blur-md border border-white/10 rounded-lg p-4">
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <div className="text-2xl">{skill.emoji}</div>
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold text-white">{skill.name}</h3>
+                                                            <p className="text-gray-400 text-sm">{skill.description}</p>
+                                                        </div>
                                                     </div>
-                                                    <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
-                                                        <div
-                                                            className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full"
-                                                            style={{ width: `${skill.level}%` }}
-                                                        ></div>
+                                                    <div className="mt-3">
+                                                        <div className="flex justify-between mb-1">
+                                                            <span className="text-gray-400 text-xs">Proficiency</span>
+                                                            <span className="text-white text-xs font-medium">{skill.level}%</span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-700 rounded-full h-2">
+                                                            <div
+                                                                className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full"
+                                                                style={{ width: `${skill.level}%` }}
+                                                            ></div>
+                                                        </div>
                                                     </div>
-                                                    <p className="text-gray-400 text-sm">{skill.description}</p>
                                                 </div>
                                             ))}
+
+                                            {parseSkills(agent.skills || '').length === 0 && (
+                                                <div className="text-center py-6">
+                                                    <p className="text-gray-400">No skills defined for this agent yet.</p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -839,6 +1155,111 @@ export default function OnchainAgentDetailPage() {
                                             >
                                                 {isSending ? 'Thinking...' : 'Send'}
                                             </Button>
+                                        </div>
+                                    </div>
+                                </TabsContent>
+
+                                {/* Raw Data Tab */}
+                                <TabsContent value="raw-data" className="space-y-6">
+                                    <div className="bg-black/20 backdrop-blur-md border border-white/5 rounded-xl p-6">
+                                        <h2 className="text-xl font-bold text-white mb-4">Raw Agent Data</h2>
+                                        <Separator className="mb-4 bg-white/10" />
+                                        
+                                        <div className="space-y-6">
+                                            {/* Agent Basic Info */}
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-white mb-2">Basic Information</h3>
+                                                <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-lg p-4">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <p className="text-gray-400 text-sm">Handle</p>
+                                                            <p className="text-white font-mono">{agent.handle}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-gray-400 text-sm">Display Name</p>
+                                                            <p className="text-white">{agent.display_name}</p>
+                                                        </div>
+                                                <div>
+                                                            <p className="text-gray-400 text-sm">Twitter ID</p>
+                                                            <p className="text-white font-mono">{agent.twitter_id || 'N/A'}</p>
+                                                            </div>
+                                                            <div>
+                                                            <p className="text-gray-400 text-sm">Created At</p>
+                                                            <p className="text-white">{agent.created_at ? new Date(agent.created_at).toLocaleString() : 'N/A'}</p>
+                                                            </div>
+                                                            <div>
+                                                            <p className="text-gray-400 text-sm">Source</p>
+                                                            <p className="text-white">{
+                                                                agent.source === 'agent_chain_users' 
+                                                                    ? 'Onchainn Agent' 
+                                                                    : agent.source === 'general_agents'
+                                                                        ? agent.agentType === 'twitter' 
+                                                                            ? 'Twitter Agent' 
+                                                                            : 'Character Agent'
+                                                                        : 'Mock Agent'
+                                                            }</p>
+                                                            </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                            
+                                            {/* Agent Profile Data */}
+                                                <div>
+                                                <h3 className="text-lg font-semibold text-white mb-2">Profile Data</h3>
+                                                    <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-lg p-4">
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <p className="text-gray-400 text-sm">Bio</p>
+                                                            <p className="text-white">{agent.bio || 'N/A'}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-gray-400 text-sm">Life Goals</p>
+                                                            <div className="text-white whitespace-pre-line">{agent.life_goals || 'N/A'}</div>
+                                                    </div>
+                                                <div>
+                                                            <p className="text-gray-400 text-sm">Profile Picture URL</p>
+                                                            <p className="text-white font-mono text-xs break-all">{agent.profile_picture || 'N/A'}</p>
+                                                        </div>
+                                                <div>
+                                                            <p className="text-gray-400 text-sm">Cover Picture URL</p>
+                                                            <p className="text-white font-mono text-xs break-all">{agent.cover_picture || 'N/A'}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                    </div>
+                                            
+                                            {/* Agent Skills */}
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-white mb-2">Skills (Raw JSON)</h3>
+                                                <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-lg p-4">
+                                                    <pre className="text-white text-xs overflow-x-auto">{agent.skills || 'N/A'}</pre>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Agent Life Context */}
+                                                <div>
+                                                <h3 className="text-lg font-semibold text-white mb-2">Life Context (Raw JSON)</h3>
+                                                    <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-lg p-4">
+                                                    <pre className="text-white text-xs overflow-x-auto">{agent.life_context || 'N/A'}</pre>
+                                                                    </div>
+                                                                </div>
+                                            
+                                            {/* Wallet Information */}
+                                                <div>
+                                                <h3 className="text-lg font-semibold text-white mb-2">Wallet Information</h3>
+                                                    <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-lg p-4">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <p className="text-gray-400 text-sm">Wallet Address</p>
+                                                            <p className="text-white font-mono text-xs break-all">{agent.walletAddress || 'N/A'}</p>
+                                                                    </div>
+                                                <div>
+                                                            <p className="text-gray-400 text-sm">Token Balance</p>
+                                                            <p className="text-white">{agent.tokenBalance || '0'} $AGENT</p>
+                                                                    </div>
+                                                                        </div>
+                                                                        </div>
+                                                                </div>
                                         </div>
                                     </div>
                                 </TabsContent>

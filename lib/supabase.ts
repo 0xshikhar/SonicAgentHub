@@ -20,20 +20,29 @@ if (!supabaseKey) {
     throw new Error('Missing Supabase ANON key in environment variables')
 }
 
-// Create the standard client with anon key (subject to RLS)
-const supabase = createClient<Database>(supabaseUrl, supabaseKey)
+// Create singleton instances to be reused throughout the codebase
 
-// Create a service role client that can bypass RLS if the key is available
-const serviceRoleClient = supabaseServiceKey 
+// Standard client with anon key (subject to RLS)
+export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+    db: { schema: 'public' },
+    auth: { debug: true },
+})
+
+// Service role client that can bypass RLS if the key is available
+export const serviceRoleClient = supabaseServiceKey
     ? createClient<Database>(supabaseUrl, supabaseServiceKey, {
         auth: {
             autoRefreshToken: false,
             persistSession: false
         }
-      })
+    })
     : null
 
-export default supabase;
+// Default export for backward compatibility
+export default supabase
+
+// Cache for server component clients to avoid creating new instances
+let serverComponentClientCache: any = null
 
 // Helper function for server components
 export const createServerSupabaseClient = async () => {
@@ -42,17 +51,26 @@ export const createServerSupabaseClient = async () => {
         if (serviceRoleClient) {
             return serviceRoleClient
         }
-        
+
+        // Use cached instance if available
+        if (serverComponentClientCache) {
+            return serverComponentClientCache
+        }
+
         // Otherwise try to use the auth-helpers client
         const { createServerComponentClient } = await import('@supabase/auth-helpers-nextjs')
         const { cookies } = await import('next/headers')
-        return createServerComponentClient<Database>({ cookies })
+        serverComponentClientCache = createServerComponentClient<Database>({ cookies })
+        return serverComponentClientCache
     } catch (error) {
         console.error('Error creating server Supabase client:', error)
         // Fall back to direct client
-        return createClient<Database>(supabaseUrl, supabaseKey)
+        return supabase
     }
 }
+
+// Cache for server action clients to avoid creating new instances
+let serverActionClientCache: any = null
 
 // Helper function for server actions
 export const createActionSupabaseClient = async () => {
@@ -61,15 +79,21 @@ export const createActionSupabaseClient = async () => {
         if (serviceRoleClient) {
             return serviceRoleClient
         }
-        
+
+        // Use cached instance if available
+        if (serverActionClientCache) {
+            return serverActionClientCache
+        }
+
         // Otherwise try to use the auth-helpers client
         const { createServerActionClient } = await import('@supabase/auth-helpers-nextjs')
         const { cookies } = await import('next/headers')
-        return createServerActionClient<Database>({ cookies })
+        serverActionClientCache = createServerActionClient<Database>({ cookies })
+        return serverActionClientCache
     } catch (error) {
         console.error('Error creating action Supabase client:', error)
         // Fall back to direct client
-        return createClient<Database>(supabaseUrl, supabaseKey)
+        return supabase
     }
 }
 
@@ -82,5 +106,5 @@ export const createApiSupabaseClient = () => {
         return serviceRoleClient
     }
     // Otherwise fall back to the anon key client
-    return createClient<Database>(supabaseUrl, supabaseKey)
+    return supabase
 }

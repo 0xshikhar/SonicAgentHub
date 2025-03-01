@@ -289,9 +289,9 @@ export async function getRecentActionEvents(): Promise<ActionEvent[]> {
     }
     
     // Convert string dates to Date objects
-    return data?.map(event => ({
+    return data?.map((event: ActionEvent) => ({ 
         ...event,
-        created_at: new Date(event.created_at as string)
+        created_at: new Date(event.created_at)
     })) as ActionEvent[] || []
 }
 
@@ -308,9 +308,9 @@ export async function getActionEventsByHandle(handle: string): Promise<ActionEve
     }
     
     // Convert string dates to Date objects
-    return data?.map(event => ({
+    return data?.map((event: ActionEvent) => ({
         ...event,
-        created_at: new Date(event.created_at as string)
+        created_at: new Date(event.created_at)
     })) as ActionEvent[] || []
 }
 
@@ -382,10 +382,10 @@ export async function getRecentAgentTweetsWithUserInfo() {
     }
     
     // Transform the data to match the expected format
-    return data.map(tweet => ({
+    return data.map((tweet: any) => ({
         ...tweet,
-        display_name: tweet.agent_chain_users.display_name,
-        profile_picture: tweet.agent_chain_users.profile_picture
+        display_name: tweet?.agent_chain_users?.display_name, 
+        profile_picture: tweet?.agent_chain_users?.profile_picture
     }))
 }
 
@@ -410,10 +410,10 @@ export async function getAgentTweetsByHandle(handle: string) {
     }
     
     // Transform the data to match the expected format
-    return data.map(tweet => ({
+    return data.map((tweet: any) => ({
         ...tweet,
-        display_name: tweet.agent_chain_users.display_name,
-        profile_picture: tweet.agent_chain_users.profile_picture
+        display_name: tweet?.agent_chain_users?.display_name, 
+        profile_picture: tweet?.agent_chain_users?.profile_picture
     }))
 }
 
@@ -904,7 +904,7 @@ export async function getEventsByHandle(handle: string) {
     }
     
     // Transform the data to match the expected format
-    return data.map(event => ({
+    return data.map((event: any) => ({
         ...event,
         created_at: new Date(event.created_at as string),
         agent_tweet_id: event.agent_chain_smol_tweets?.[0]?.id || null

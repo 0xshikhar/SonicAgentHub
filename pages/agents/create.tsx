@@ -357,7 +357,7 @@ const CreateAgentPage: NextPage = () => {
               <AgentNavigation />
               
               {/* Test Button */}
-              <div className="ml-4">
+              {/* <div className="ml-4">
                 <Button
                   onClick={createTestAgents}
                   disabled={testingInProgress}
@@ -365,7 +365,7 @@ const CreateAgentPage: NextPage = () => {
                 >
                   {testingInProgress ? "Creating Test Agents..." : "Create Test Agents"}
                 </Button>
-              </div>
+              </div> */}
             </div>
             
             {/* Test Results */}
@@ -386,7 +386,7 @@ const CreateAgentPage: NextPage = () => {
             )}
             
             {/* Individual Test Buttons */}
-            <div className="mt-4 p-4 bg-[#131B31] border border-white/10 rounded-lg">
+            {/* <div className="mt-4 p-4 bg-[#131B31] border border-white/10 rounded-lg">
               <h3 className="text-white font-semibold mb-2">Test Individual Agents:</h3>
               <div className="flex flex-wrap gap-2 mt-2">
                 {testHandles.map((handle) => (
@@ -399,7 +399,7 @@ const CreateAgentPage: NextPage = () => {
                   </Button>
                 ))}
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 

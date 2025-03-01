@@ -29,24 +29,68 @@ export default function AgentsPage() {
         const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
         console.log(`Using base URL: ${baseUrl} for agents list API request`);
 
-        const response = await axios.post(`${baseUrl}/api/agent-training`, {
+        // Fetch general agents
+        const generalAgentsResponse = await axios.post(`${baseUrl}/api/agent-training`, {
           action: 'getGeneralAgents'
         });
 
-        if (response.data.success) {
-          // Combine static agents with API agents
-          const apiAgents = response.data.data;
-
-          // Mark static agents as local
-          const markedStaticAgents = staticAgents.map(agent => ({
-            ...agent,
-            source: 'local'
-          }));
-
-          setAgents([...markedStaticAgents, ...apiAgents]);
+        let apiAgents = [];
+        if (generalAgentsResponse.data.success) {
+          apiAgents = generalAgentsResponse.data.data;
+          console.log('Successfully fetched general agents:', apiAgents.length);
         } else {
-          throw new Error(response.data.error || 'Failed to fetch agents');
+          console.error('Failed to fetch general agents:', generalAgentsResponse.data.error);
         }
+
+        // Fetch user agents from agent_chain_users table
+        const userAgentsResponse = await fetch(`${baseUrl}/api/debug/list-users`);
+        const userAgentsData = await userAgentsResponse.json();
+        
+        let userAgents = [];
+        if (userAgentsData.success && userAgentsData.data) {
+          // Convert user agents to the format expected by the UI
+          userAgents = userAgentsData.data.map((user: any) => ({
+            id: user.handle,
+            handle: user.handle,
+            name: user.display_name,
+            description: user.bio || 'No description available',
+            category: 'Social',
+            version: '1.0',
+            score: 4.5,
+            imageUrl: user.profile_picture,
+            source: 'agent_chain_users',
+            twitter: user.twitter_id,
+            // Include all original data for passing to detail page
+            ...user
+          }));
+          console.log('Successfully fetched user agents:', userAgents.length);
+        } else {
+          console.error('Failed to fetch user agents:', userAgentsData.error);
+        }
+
+        // Mark static agents as local
+        const markedStaticAgents = staticAgents.map(agent => ({
+          ...agent,
+          source: 'local'
+        }));
+
+        // Combine all agents
+        const allAgents = [...markedStaticAgents, ...apiAgents, ...userAgents];
+        console.log('Total agents:', allAgents.length);
+        
+        // Remove duplicates based on handle/id
+        const uniqueAgents = [];
+        const seenHandles = new Set();
+        
+        for (const agent of allAgents) {
+          const handle = agent.handle || agent.id;
+          if (!seenHandles.has(handle)) {
+            seenHandles.add(handle);
+            uniqueAgents.push(agent);
+          }
+        }
+        
+        setAgents(uniqueAgents);
       } catch (error) {
         console.error('Error fetching agents:', error);
         showToast.error('Failed to load agents from API, using static agents instead');
@@ -226,9 +270,16 @@ export default function AgentsPage() {
                     onClick={() => {
                       // Redirect onchain agents to the onchain page, others to the regular agent page
                       if (agent.source === 'agent_chain_users') {
-                        router.push(`/agents/onchain/${agent.handle || agent.id}`);
+                        router.push({
+                          pathname: `/agents/onchain/${agent.handle || agent.id}`,
+                          query: { source: agent.source },
+                        }, `/agents/onchain/${agent.handle || agent.id}`, { shallow: true });
                       } else {
-                        router.push(`/agents/${agent.id}`);
+                        // All other agents (including Twitter category from general_agents) go to the regular agent page
+                        router.push({
+                          pathname: `/agents/${agent.id}`,
+                          query: { source: agent.source },
+                        }, `/agents/${agent.id}`, { shallow: true });
                       }
                     }}
                   >

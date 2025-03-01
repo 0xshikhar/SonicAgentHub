@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ChatBox } from '@/components/ChatBox'
 import { ArrowLeft, Twitter, User, MessageSquare, Info } from 'lucide-react'
 import { AuthCheck } from '@/components/AuthCheck'
+import { supabase } from '@/lib/supabase'
 
 // Define the Agent interface based on our database schema
 interface Agent {
@@ -35,11 +36,6 @@ export default function AgentDetailPage() {
   const [agent, setAgent] = useState<Agent | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   
-  // Initialize Supabase client
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-  const supabase = createClient(supabaseUrl, supabaseKey)
-  
   // Fetch agent data when handle is available
   useEffect(() => {
     async function fetchAgent() {
@@ -51,16 +47,16 @@ export default function AgentDetailPage() {
         const { data, error } = await supabase
           .from('agent_chain_general_agents')
           .select('*')
-          .eq('handle', handle)
+          .eq('handle', handle as string)
           .single()
         
         if (error) {
           throw error
         }
         
-        if (data) {
-          setAgent(data)
-        }
+        // if (data) {
+        //   setAgent(data)
+        // }
       } catch (error) {
         console.error('Error fetching agent:', error)
       } finally {

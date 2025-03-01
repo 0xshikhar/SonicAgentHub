@@ -30,6 +30,7 @@ interface ExtendedAgent extends Agent {
     contractAddress?: string
     twitter?: string
     features?: string[]
+    handle?: string
 }
 
 export default function AgentDetailPage() {
@@ -88,7 +89,8 @@ export default function AgentDetailPage() {
                 if (response.data.success) {
                     const agentData = response.data.data;
                     
-                    // Redirect to onchain agent page if it's an onchain agent
+                    // Only redirect to onchain agent page if it's from agent_chain_users table
+                    // This ensures Twitter category agents from agent_chain_general_agents stay on this page
                     if (agentData.source === 'agent_chain_users') {
                         router.push(`/agents/onchain/${agentData.handle || id}`);
                         return;
@@ -157,7 +159,12 @@ export default function AgentDetailPage() {
             
             // Call API to get agent response
             const response = await axios.post(`${baseUrl}/api/agent-chat`, {
-                handle: agent.id,
+                // For Twitter agents from general_agents, the ID is in format 'twitter-{handle}'
+                // For Character agents from general_agents, the ID is in format 'character-{handle}'
+                // Extract the handle part if it's a prefixed ID, otherwise use the ID as is
+                handle: agent.id.startsWith('twitter-') || agent.id.startsWith('character-') 
+                    ? agent.id.split('-')[1] 
+                    : agent.id,
                 message: inputMessage
             });
 

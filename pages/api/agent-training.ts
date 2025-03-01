@@ -692,9 +692,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               // Handle traits properly based on its type
               let traitsArray: string[] = [];
               if (typeof generalAgent.traits === 'string') {
-                traitsArray = generalAgent.traits.split(',').map(t => t.trim());
+                traitsArray = generalAgent.traits.split(',').map((t: any) => t.trim()); 
               } else if (Array.isArray(generalAgent.traits)) {
-                traitsArray = generalAgent.traits.map(t => String(t));
+                traitsArray = generalAgent.traits.map((t: any) => String(t));
               }
               
               agent = createAgentFromCharacterProfile({

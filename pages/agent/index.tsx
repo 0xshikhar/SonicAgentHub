@@ -11,7 +11,7 @@ import { Search, Filter, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { AuthCheck } from '@/components/AuthCheck'
-
+import { supabase } from '@/lib/supabase'
 // Define the Agent interface based on our database schema
 interface Agent {
   id: string
@@ -36,11 +36,6 @@ export default function AgentsPage() {
   const [agentType, setAgentType] = useState<string>('all')
   const [sortBy, setSortBy] = useState<string>('newest')
   
-  // Initialize Supabase client
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-  const supabase = createClient(supabaseUrl, supabaseKey)
-  
   // Fetch agents on component mount
   useEffect(() => {
     async function fetchAgents() {
@@ -57,8 +52,8 @@ export default function AgentsPage() {
         }
         
         if (data) {
-          setAgents(data)
-          setFilteredAgents(data)
+          setAgents(data as Agent[])
+          setFilteredAgents(data as Agent[]) 
         }
       } catch (error) {
         console.error('Error fetching agents:', error)
