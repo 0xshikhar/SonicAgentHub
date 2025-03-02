@@ -1,7 +1,7 @@
 import { createAgentTrainingDataset, getTwitterUserInfo, getTweetsFromUser } from "../socialData";
 import { askGemini, askGeminiWithMessagesAndSystemPrompt } from "../gemini";
 import { FetchedTweet } from "../types";
-import { createUser, getUser, updateUser } from "../supabase-utils";
+import { createUser, getUser, updateUser, createGeneralAgent, getGeneralAgentByHandle } from "../supabase-utils";
 import { postErrorToDiscord } from "../discord";
 import { cleanHandle, goodTwitterImage } from "../strings";
 import axios from 'axios'
@@ -272,9 +272,9 @@ export async function createAgentFromCharacterProfile({
     
     // Check if agent already exists
     try {
-      const existingAgent = await getUser(cleanedHandle);
+      const existingAgent = await getGeneralAgentByHandle(cleanedHandle);
       if (existingAgent) {
-        console.log(`Agent for ${cleanedHandle} already exists`);
+        console.log(`Character agent for ${cleanedHandle} already exists`);
         return existingAgent;
       }
     } catch (error) {
@@ -352,17 +352,17 @@ export async function createAgentFromCharacterProfile({
     
     const systemPrompt = generateCharacterSystemPrompt(characterData) + `\n\nAdditional personality insights:\n${personalityProfile}\n\nLife goals:\n${lifeGoals}\n\nSkills:\n${skills}`;
     
-    // Create agent in database with the correct property names
-    const newAgent = await createUser({
+    // Create agent in the general_agents table instead of users table
+    const newAgent = await createGeneralAgent({
       handle: cleanedHandle,
-      display_name: name,
+      name: name,
+      description: description,
+      agent_type: 'character',
+      traits: traits,
+      background: background || undefined,
+      system_prompt: systemPrompt,
+      is_public: true,
       profile_picture: `/avatars/${Math.floor(Math.random() * 10) + 1}.png`, // Random avatar
-      cover_picture: "",
-      twitter_id: "",
-      bio: description,
-      life_goals: lifeGoals,
-      skills: skills,
-      life_context: `${personalityProfile}\n\nSYSTEM PROMPT:\n${systemPrompt}`,
       created_at: new Date().toISOString()
     });
     

@@ -13,7 +13,6 @@ import { showToast } from '@/lib/toast'
 const navigation = [
     { name: 'Home', href: '/' },
     { name: 'Agents', href: '/agents' },
-    { name: 'Main', href: '/main' }
 ];
 
 export function Navbar() {

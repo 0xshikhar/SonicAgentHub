@@ -13,6 +13,7 @@ interface SuccessResponse {
   success: true;
   data: any;
   message: string;
+  redirectUrl: string;
 }
 
 interface ErrorResponse {
@@ -84,6 +85,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           return res.status(200).json({ 
             success: true, 
             data: agent,
+            redirectUrl: '/agents',
             message: `Agent created successfully from Twitter profile: ${twitterHandle}`
           });
         } catch (error) {
@@ -133,6 +135,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               return res.status(200).json({ 
                 success: true, 
                 data: agent,
+                redirectUrl: '/agents',
                 message: `Agent created successfully from Twitter profile: ${twitterHandle}`
               });
             } catch (supabaseError) {
@@ -165,6 +168,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                 return res.status(200).json({ 
                   success: true, 
                   data: agent,
+                  redirectUrl: '/agents',
                   message: `Agent created successfully from Twitter profile: ${twitterHandle}`
                 });
               } catch (directError) {
@@ -194,8 +198,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         }
         
         try {
-          // Try to use the real service first for onchain agents
-          const dbUser = await createRealCharacterAgent({ 
+          // Use the createRealCharacterAgent function which now creates in the general_agents table
+          const dbUser = await createRealCharacterAgent({
             handle, 
             name, 
             description, 
@@ -204,7 +208,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           });
           
           // Convert to Agent format
-          const agent = convertDbUserToAgent(dbUser);
+          const agent = {
+            id: dbUser.handle,
+            name: dbUser.name,
+            description: dbUser.description || "",
+            category: 'Social' as const,
+            chains: ['ETH', 'Polygon'],
+            version: '1.0.0',
+            score: 4.5,
+            imageUrl: dbUser.profile_picture || "/logos/aiagent-bg.png",
+            contractAddress: `0x${dbUser.handle}`,
+            stats: {
+              users: 0,
+              transactions: 0,
+              volume: 0,
+            },
+            features: ['Custom Personality', 'Role Playing', 'Interactive Conversations'],
+            agentType: 'character' as const,
+            source: 'general_agents' as const
+          };
           
           // Add to dynamic agents
           dynamicAgents.push(agent);
@@ -212,6 +234,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           return res.status(200).json({ 
             success: true, 
             data: agent,
+            redirectUrl: '/agents',
             message: `Agent created successfully from character profile: ${name}`
           });
         } catch (error) {
@@ -269,6 +292,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             return res.status(200).json({ 
               success: true, 
               data: agent,
+              redirectUrl: '/agents',
               message: `Agent created successfully from character profile: ${name}`
             });
           } catch (supabaseError) {
@@ -317,6 +341,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               return res.status(200).json({ 
                 success: true, 
                 data: agent,
+                redirectUrl: '/agents',
                 message: `Agent created successfully from character profile: ${name}`
               });
             } catch (directError) {
