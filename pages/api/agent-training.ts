@@ -13,7 +13,6 @@ interface SuccessResponse {
   success: true;
   data: any;
   message: string;
-  redirectUrl: string;
 }
 
 interface ErrorResponse {
@@ -85,7 +84,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           return res.status(200).json({ 
             success: true, 
             data: agent,
-            redirectUrl: '/agents',
             message: `Agent created successfully from Twitter profile: ${twitterHandle}`
           });
         } catch (error) {
@@ -135,7 +133,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               return res.status(200).json({ 
                 success: true, 
                 data: agent,
-                redirectUrl: '/agents',
                 message: `Agent created successfully from Twitter profile: ${twitterHandle}`
               });
             } catch (supabaseError) {
@@ -168,7 +165,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                 return res.status(200).json({ 
                   success: true, 
                   data: agent,
-                  redirectUrl: '/agents',
                   message: `Agent created successfully from Twitter profile: ${twitterHandle}`
                 });
               } catch (directError) {
@@ -234,7 +230,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           return res.status(200).json({ 
             success: true, 
             data: agent,
-            redirectUrl: '/agents',
             message: `Agent created successfully from character profile: ${name}`
           });
         } catch (error) {
@@ -292,7 +287,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             return res.status(200).json({ 
               success: true, 
               data: agent,
-              redirectUrl: '/agents',
               message: `Agent created successfully from character profile: ${name}`
             });
           } catch (supabaseError) {
@@ -341,7 +335,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               return res.status(200).json({ 
                 success: true, 
                 data: agent,
-                redirectUrl: '/agents',
                 message: `Agent created successfully from character profile: ${name}`
               });
             } catch (directError) {

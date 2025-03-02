@@ -233,8 +233,8 @@ export default function AgentsPage() {
                     <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-blue-500 to-purple-600 rotate-45 transform origin-top-right group-hover:scale-110 transition-transform duration-300"></div>
                   </div>
 
-                  {/* Source Badge */}
-                  <div className="absolute top-4 left-4 px-2.5 py-1 rounded-full text-xs font-medium bg-black/30 backdrop-blur-md border border-white/10 z-10">
+                  {/* Source Badge - Moved to top right */}
+                  <div className="absolute top-14 right-4 px-2.5 py-1 rounded-full text-xs font-medium bg-black/30 backdrop-blur-md border border-white/10 z-10">
                     <span className={`flex items-center ${badge.textColor}`}>
                       <span className={`w-1.5 h-1.5 ${badge.bgColor} rounded-full mr-1.5`}></span>
                       {badge.text}
@@ -286,11 +286,6 @@ export default function AgentsPage() {
                         <span className="px-3 py-1.5 text-sm bg-[#131B31] text-blue-400 rounded-lg border border-blue-500/20 group-hover:border-blue-500/40 transition-all duration-300">
                           {agent.category}
                         </span>
-                        {agent.twitter && (
-                          <span className="px-3 py-1.5 text-sm bg-[#131B31] text-purple-400 rounded-lg border border-purple-500/20 group-hover:border-purple-500/40 transition-all duration-300">
-                            Twitter
-                          </span>
-                        )}
                       </div>
                       
                       {/* Chat Button */}

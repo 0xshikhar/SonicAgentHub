@@ -85,12 +85,11 @@ export function AgentTrainingForm() {
 
       showToast.success(`Agent created from Twitter profile: ${data.twitterHandle}`);
       
-      // Redirect to chat with the new agent
-      if (response.data.success && response.data.data) {
-        router.push(`/agents/chat?handle=${response.data.data.id}`);
-      } else {
-        twitterForm.reset();
-      }
+      // Redirect to agents listing page
+      router.push('/agents');
+      
+      // Reset loading state
+      setIsLoading(false);
     } catch (error: unknown) {
       console.error("Error creating agent from Twitter:", error);
       const errorMessage = error instanceof Error 
@@ -122,12 +121,11 @@ export function AgentTrainingForm() {
 
       showToast.success(`Agent created from character profile: ${data.name}`);
       
-      // Redirect to chat with the new agent
-      if (response.data.success && response.data.data) {
-        router.push(`/agents/chat?handle=${response.data.data.id}`);
-      } else {
-        characterForm.reset();
-      }
+      // Redirect to agents listing page
+      router.push('/agents');
+      
+      // Reset loading state
+      setIsLoading(false);
     } catch (error: unknown) {
       console.error("Error creating agent from character:", error);
       const errorMessage = error instanceof Error 

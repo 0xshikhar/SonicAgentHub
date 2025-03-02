@@ -130,8 +130,8 @@ const CreateAgentPage: NextPage = () => {
       if (response.data.success) {
         showToast.success(`Agent created from Twitter profile: @${handle}`);
 
-        // Redirect to the agent's profile page
-        router.push(`/agents/${handle}`);
+        // Redirect to agents listing page
+        router.push('/agents');
       } else {
         showToast.error(response.data.error || "Failed to create agent");
         twitterForm.reset();
@@ -169,13 +169,8 @@ const CreateAgentPage: NextPage = () => {
 
       showToast.success(`Agent created from character profile: ${data.name}`);
 
-      // Redirect to chat with the new agent
-      if (response.data.success && response.data.data) {
-        router.push(`/agents/chat?handle=${response.data.data.id}`);
-      } else {
-        characterForm.reset();
-        setIsLoading(false);
-      }
+      // Redirect to agents listing page
+      router.push('/agents');
     } catch (error: unknown) {
       console.error("Error creating agent from character:", error);
       const errorMessage = error instanceof Error
@@ -185,6 +180,7 @@ const CreateAgentPage: NextPage = () => {
           : "Failed to create agent";
 
       showToast.error(errorMessage);
+    } finally {
       setIsLoading(false);
     }
   }
@@ -207,9 +203,10 @@ const CreateAgentPage: NextPage = () => {
       if (response.data.success) {
         showToast.success("Your onchain agent request has been submitted successfully!");
         onchainForm.reset();
+        
+        // Redirect to agents listing page
+        router.push('/agents');
       }
-
-      setIsLoading(false);
     } catch (error: unknown) {
       console.error("Error submitting onchain agent request:", error);
       const errorMessage = error instanceof Error
@@ -219,6 +216,7 @@ const CreateAgentPage: NextPage = () => {
           : "Failed to submit request";
 
       showToast.error(errorMessage);
+    } finally {
       setIsLoading(false);
     }
   }
