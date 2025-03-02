@@ -27,6 +27,7 @@ import { showToast } from "@/lib/toast";
 import { AgentNavigation } from "@/components/AgentNavigation"
 import { AdminAgentCreator } from "@/components/AdminAgentCreator"
 import { AuthCheck } from "@/components/AuthCheck"
+import { toast } from "sonner";
 
 // Twitter profile form schema
 const twitterFormSchema = z.object({
@@ -81,7 +82,7 @@ const CreateAgentPage: NextPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("twitter");
   const [testingInProgress, setTestingInProgress] = useState(false);
-  const [testResults, setTestResults] = useState<Array<{handle: string; success: boolean; message: string}>>([]);
+  const [testResults, setTestResults] = useState<Array<{ handle: string; success: boolean; message: string }>>([]);
   const { address } = useAccount();
 
   // Twitter form
@@ -122,7 +123,7 @@ const CreateAgentPage: NextPage = () => {
 
       // Get the base URL with window check
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      console.log(`Creating Twitter agent using API endpoint: ${baseUrl}/api/users/create`);
+      toast.info(`Creating Twitter agent using API endpoint: ${baseUrl}/api/users/create`);
 
       // Call our new API endpoint
       const response = await axios.post(`${baseUrl}/api/users/create`, {
@@ -135,18 +136,19 @@ const CreateAgentPage: NextPage = () => {
         // Redirect to agents listing page
         router.push('/agents');
       } else {
-        showToast.error(response.data.error || "Failed to create agent");
+        showToast.error("Sorry, We have disabled Twitter agent creation for now, due to the high cost of API requests.");
         twitterForm.reset();
       }
     } catch (error: unknown) {
-      console.error("Error creating agent from Twitter:", error);
+      showToast.error("Sorry, We have disabled Twitter agent creation for now, due to the high cost of API requests.");
+
       const errorMessage = error instanceof Error
         ? error.message
         : axios.isAxiosError(error) && error.response?.data?.error
           ? error.response.data.error
           : "Failed to create agent";
 
-      showToast.error(errorMessage);
+      // showToast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -158,7 +160,7 @@ const CreateAgentPage: NextPage = () => {
       // Get the base URL from the current window location
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
       console.log(`Using API endpoint: ${baseUrl}/api/agent-training for character agent creation`);
-      
+
       const response = await axios.post(`${baseUrl}/api/agent-training`, {
         action: "createFromCharacter",
         handle: data.handle,
@@ -193,7 +195,7 @@ const CreateAgentPage: NextPage = () => {
       // Get the base URL from the current window location
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
       console.log(`Using API endpoint: ${baseUrl}/api/agent-training for onchain agent request`);
-      
+
       const response = await axios.post(`${baseUrl}/api/agent-training`, {
         action: "createOnchainAgentRequest",
         email: data.email,
@@ -205,7 +207,7 @@ const CreateAgentPage: NextPage = () => {
       if (response.data.success) {
         showToast.success("Your onchain agent request has been submitted successfully!");
         onchainForm.reset();
-        
+
         // Redirect to agents listing page
         router.push('/agents');
       }
@@ -228,15 +230,15 @@ const CreateAgentPage: NextPage = () => {
     try {
       console.log(`Creating agent for @${handle}...`);
       showToast.info(`Creating agent for @${handle}...`);
-      
+
       // Get the base URL from the current window location
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
       console.log(`Using API endpoint: ${baseUrl}/api/users/create`);
-      
+
       // Make the API request
       const response = await axios.post(`${baseUrl}/api/users/create`, { handle });
       console.log(`API response for @${handle}:`, response.data);
-      
+
       if (response.data.success) {
         console.log(`Successfully created agent for @${handle}:`, response.data);
         showToast.success(`Successfully created agent for @${handle}`);
@@ -248,13 +250,13 @@ const CreateAgentPage: NextPage = () => {
       }
     } catch (error: unknown) {
       console.error(`Error creating agent for @${handle}:`, error);
-      
+
       const errorMessage = error instanceof Error
         ? error.message
         : axios.isAxiosError(error) && error.response?.data?.error
           ? error.response.data.error
           : "Failed to create agent";
-      
+
       showToast.error(`Error creating agent for @${handle}: ${errorMessage}`);
       return false;
     }
@@ -264,33 +266,33 @@ const CreateAgentPage: NextPage = () => {
   async function createTestAgents() {
     setTestingInProgress(true);
     setTestResults([]);
-    
+
     const results = [];
-    
+
     for (const handle of testHandles) {
       try {
         // Update UI to show current handle being processed
         setTestResults(prev => [...prev, { handle, success: false, message: "Processing..." }]);
-        
+
         // Use the single test agent function
         const success = await createSingleTestAgent(handle);
-        
+
         if (success) {
           // Update results with success
-          setTestResults(prev => 
-            prev.map(item => 
-              item.handle === handle 
-                ? { handle, success: true, message: "Created successfully!" } 
+          setTestResults(prev =>
+            prev.map(item =>
+              item.handle === handle
+                ? { handle, success: true, message: "Created successfully!" }
                 : item
             )
           );
           results.push({ handle, success: true, message: "Created successfully!" });
         } else {
           // Update results with error
-          setTestResults(prev => 
-            prev.map(item => 
-              item.handle === handle 
-                ? { handle, success: false, message: "Failed to create agent" } 
+          setTestResults(prev =>
+            prev.map(item =>
+              item.handle === handle
+                ? { handle, success: false, message: "Failed to create agent" }
                 : item
             )
           );
@@ -298,22 +300,22 @@ const CreateAgentPage: NextPage = () => {
         }
       } catch (error: unknown) {
         console.error(`Error in createTestAgents for @${handle}:`, error);
-        
+
         // Update results with error
-        setTestResults(prev => 
-          prev.map(item => 
-            item.handle === handle 
-              ? { handle, success: false, message: "Error creating agent" } 
+        setTestResults(prev =>
+          prev.map(item =>
+            item.handle === handle
+              ? { handle, success: false, message: "Error creating agent" }
               : item
           )
         );
         results.push({ handle, success: false, message: "Error creating agent" });
       }
-      
+
       // Add a small delay between requests
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
-    
+
     setTestingInProgress(false);
   }
 
@@ -355,7 +357,7 @@ const CreateAgentPage: NextPage = () => {
 
             <div className="flex items-center justify-between">
               <AgentNavigation />
-              
+
               {/* Test Button */}
               {/* <div className="ml-4">
                 <Button
@@ -367,7 +369,7 @@ const CreateAgentPage: NextPage = () => {
                 </Button>
               </div> */}
             </div>
-            
+
             {/* Test Results */}
             {testResults.length > 0 && (
               <div className="mt-4 p-4 bg-[#131B31] border border-white/10 rounded-lg">
@@ -384,7 +386,7 @@ const CreateAgentPage: NextPage = () => {
                 </div>
               </div>
             )}
-            
+
             {/* Individual Test Buttons */}
             {/* <div className="mt-4 p-4 bg-[#131B31] border border-white/10 rounded-lg">
               <h3 className="text-white font-semibold mb-2">Test Individual Agents:</h3>
@@ -703,7 +705,7 @@ const CreateAgentPage: NextPage = () => {
                   </Card>
                 </TabsContent>
               </Tabs>
-              
+
               {/* Admin Agent Creator - Only visible to admin */}
               <div className="mt-8">
                 <AdminAgentCreator />

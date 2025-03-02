@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Check if user exists
-        const { data: user, error: userError } = await supabase
+        const { data: user, error: userError } = await supabase()
             .from('agent_chain_users')
             .select('handle')
             .eq('handle', handle)
@@ -38,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             action_type: 'manual_tweet',
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await supabase()
             .from('agent_chain_smol_tweets')
             .insert(tweetData)
             .select()
@@ -49,12 +49,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Also create an action event
-        await supabase.from('agent_chain_action_events').insert({
-            from_handle: handle,
-            action_type: 'tweet',
-            main_output: content,
-            top_level_type: 'tweet',
-        })
+        await supabase()
+            .from('agent_chain_action_events')
+            .insert({
+                from_handle: handle,
+                action_type: 'tweet',
+                main_output: content,
+                top_level_type: 'tweet',
+            })
 
         return res.status(201).json({ success: true, data })
     } catch (error: any) {

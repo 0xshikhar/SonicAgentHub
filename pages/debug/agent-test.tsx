@@ -57,27 +57,27 @@ export default function AgentTestPage() {
       console.log('Testing direct fetch for ilblackdragon');
       
       // Test 1: Fetch from agent_chain_users with .single()
-      const test1 = await supabase
+      const test1 = await supabase()
         .from('agent_chain_users')
         .select('*')
         .eq('handle', 'ilblackdragon')
         .single();
       
       // Test 2: Fetch from agent_chain_users without .single()
-      const test2 = await supabase
+      const test2 = await supabase()
         .from('agent_chain_users')
         .select('*')
         .eq('handle', 'ilblackdragon');
       
       // Test 3: Fetch from agent_chain_general_agents with .single()
-      const test3 = await supabase
+      const test3 = await supabase()
         .from('agent_chain_general_agents')
         .select('*')
         .eq('handle', 'ilblackdragon')
         .single();
       
       // Test 4: Fetch from agent_chain_general_agents without .single()
-      const test4 = await supabase
+      const test4 = await supabase()
         .from('agent_chain_general_agents')
         .select('*')
         .eq('handle', 'ilblackdragon');

@@ -7,7 +7,7 @@ export async function getOrCreateEndUser(address: string) {
     
     try {
         // First check if end user exists
-        const { data: existingUser, error: fetchError } = await supabase
+        const { data: existingUser, error: fetchError } = await supabase()
             .from('agent_chain_end_users')
             .select('*')
             .eq('address', address)
@@ -30,7 +30,7 @@ export async function getOrCreateEndUser(address: string) {
             agentCreated: false,
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await supabase()
             .from('agent_chain_end_users')
             .insert(userData)
             .select()
@@ -55,7 +55,7 @@ export async function checkEndUserHasAgent(address: string) {
     
     try {
         // Get the end user record
-        const { data: endUser, error: fetchError } = await supabase
+        const { data: endUser, error: fetchError } = await supabase()
             .from('agent_chain_end_users')
             .select('agentCreated')
             .eq('address', address)

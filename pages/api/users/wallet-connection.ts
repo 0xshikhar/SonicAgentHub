@@ -95,7 +95,7 @@ export default async function handler(
         console.log(`[API] Attempting to get or create end user with address: ${address}`)
 
         // First check if end user exists
-        const { data: existingUser, error: fetchError } = await supabase
+        const { data: existingUser, error: fetchError } = await supabase()
             .from('agent_chain_end_users')
             .select('*')
             .eq('address', address)
@@ -123,7 +123,7 @@ export default async function handler(
             agentCreated: false,
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await supabase()
             .from('agent_chain_end_users')
             .insert(userData)
             .select()

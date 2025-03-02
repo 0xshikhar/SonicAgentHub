@@ -1,110 +1,108 @@
 import { createClient } from '@supabase/supabase-js'
-import { Database } from '@/types/supabase'
+import type { Database } from '@/types/supabase'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+// Environment validation
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-// Add detailed logging for debugging
-console.log(`Supabase URL available: ${Boolean(supabaseUrl)}`)
-console.log(`Supabase ANON key available: ${Boolean(supabaseKey)}`)
-console.log(`Supabase SERVICE key available: ${Boolean(supabaseServiceKey)}`)
-
-if (!supabaseUrl) {
-    console.error('Missing Supabase URL in environment variables')
-    throw new Error('Missing Supabase URL in environment variables')
+// Optional debugging (consider only enabling in development)
+if (process.env.NODE_ENV === 'development') {
+    console.log({
+        supabaseUrlExists: Boolean(supabaseUrl),
+        supabaseKeyExists: Boolean(supabaseKey),
+        serviceKeyExists: Boolean(supabaseServiceKey),
+    })
 }
 
-if (!supabaseKey) {
-    console.error('Missing Supabase ANON key in environment variables')
-    throw new Error('Missing Supabase ANON key in environment variables')
+// Validation handling
+if (!supabaseUrl || !supabaseKey) {
+    // Handle missing credentials gracefully in production
+    if (typeof window === 'undefined' && process.env.NODE_ENV === 'production') {
+        console.error('Supabase credentials missing in production environment')
+    }
 }
 
-// Create singleton instances to be reused throughout the codebase
+// Standard client with public anon key (respects RLS)
+let clientInstance: ReturnType<typeof createClient<Database>> | null = null
 
-// Standard client with anon key (subject to RLS)
-export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
-    db: { schema: 'public' },
-    auth: { debug: true },
-})
+export const supabase = () => {
+    if (clientInstance) return clientInstance
 
-// Service role client that can bypass RLS if the key is available
-export const serviceRoleClient = supabaseServiceKey
-    ? createClient<Database>(supabaseUrl, supabaseServiceKey, {
+    if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Missing Supabase credentials')
+    }
+
+    clientInstance = createClient<Database>(supabaseUrl, supabaseKey, {
+        db: { schema: 'public' },
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+        },
+    })
+
+    return clientInstance
+}
+
+// Service role client (bypasses RLS)
+let serviceRoleInstance: ReturnType<typeof createClient<Database>> | null = null
+
+export const getServiceRoleClient = () => {
+    if (serviceRoleInstance) return serviceRoleInstance
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+        return null
+    }
+
+    serviceRoleInstance = createClient<Database>(supabaseUrl, supabaseServiceKey, {
         auth: {
             autoRefreshToken: false,
             persistSession: false
         }
     })
-    : null
 
-// Default export for backward compatibility
-export default supabase
+    return serviceRoleInstance
+}
 
-// Cache for server component clients to avoid creating new instances
-let serverComponentClientCache: any = null
-
-// Helper function for server components
+// Server component client (with proper lazy loading)
 export const createServerSupabaseClient = async () => {
     try {
-        // If we're in a server component and have a service role key, use it to bypass RLS
-        if (serviceRoleClient) {
-            return serviceRoleClient
-        }
+        // Prioritize service role client for admin operations
+        const serviceClient = getServiceRoleClient()
+        if (serviceClient) return serviceClient
 
-        // Use cached instance if available
-        if (serverComponentClientCache) {
-            return serverComponentClientCache
-        }
-
-        // Otherwise try to use the auth-helpers client
+        // Dynamic imports to avoid Next.js errors
         const { createServerComponentClient } = await import('@supabase/auth-helpers-nextjs')
         const { cookies } = await import('next/headers')
-        serverComponentClientCache = createServerComponentClient<Database>({ cookies })
-        return serverComponentClientCache
+
+        return createServerComponentClient<Database>({ cookies })
     } catch (error) {
-        console.error('Error creating server Supabase client:', error)
-        // Fall back to direct client
-        return supabase
+        console.error('Server component client error:', error)
+        return supabase()
     }
 }
 
-// Cache for server action clients to avoid creating new instances
-let serverActionClientCache: any = null
-
-// Helper function for server actions
+// Server action client
 export const createActionSupabaseClient = async () => {
     try {
-        // If we're in a server action and have a service role key, use it to bypass RLS
-        if (serviceRoleClient) {
-            return serviceRoleClient
-        }
+        // Prioritize service role client for admin operations
+        const serviceClient = getServiceRoleClient()
+        if (serviceClient) return serviceClient
 
-        // Use cached instance if available
-        if (serverActionClientCache) {
-            return serverActionClientCache
-        }
-
-        // Otherwise try to use the auth-helpers client
+        // Dynamic imports to avoid Next.js errors
         const { createServerActionClient } = await import('@supabase/auth-helpers-nextjs')
         const { cookies } = await import('next/headers')
-        serverActionClientCache = createServerActionClient<Database>({ cookies })
-        return serverActionClientCache
+
+        return createServerActionClient<Database>({ cookies })
     } catch (error) {
-        console.error('Error creating action Supabase client:', error)
-        // Fall back to direct client
-        return supabase
+        console.error('Server action client error:', error)
+        return supabase()
     }
 }
 
-// Helper function for API routes (Pages Router)
+// API routes client
 export const createApiSupabaseClient = () => {
-    console.log('Creating API Supabase client with URL and key available')
-    // For API routes, always use the service role client if available to bypass RLS
-    if (serviceRoleClient) {
-        console.log('Using service role client for API route')
-        return serviceRoleClient
-    }
-    // Otherwise fall back to the anon key client
-    return supabase
+    return getServiceRoleClient() || supabase()
 }
+
+export default supabase

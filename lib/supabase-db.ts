@@ -11,6 +11,7 @@ import {
     FetchedTweet,
 } from './types'
 import { cleanHandle, goodTwitterImage } from './strings'
+import supabase from './supabase'
 import type { Tables, TablesInsert } from '@/types/supabase'
 
 // User functions
@@ -289,9 +290,10 @@ export async function getRecentActionEvents(): Promise<ActionEvent[]> {
     }
     
     // Convert string dates to Date objects
-    return data?.map((event: ActionEvent) => ({ 
+    return data?.map((event) => ({
         ...event,
-        created_at: new Date(event.created_at)
+        created_at: new Date(event.created_at || ''),
+        top_level_type: event.top_level_type as "individual" | "duet" | "world_event"
     })) as ActionEvent[] || []
 }
 
@@ -308,9 +310,10 @@ export async function getActionEventsByHandle(handle: string): Promise<ActionEve
     }
     
     // Convert string dates to Date objects
-    return data?.map((event: ActionEvent) => ({
+    return data?.map((event) => ({
         ...event,
-        created_at: new Date(event.created_at)
+        created_at: new Date(event.created_at || ''),
+        top_level_type: event.top_level_type as "individual" | "duet" | "world_event"
     })) as ActionEvent[] || []
 }
 
@@ -712,25 +715,15 @@ export async function getWalletByHandle(handle: string) {
         handle = cleanHandle(handle)
         console.log(`[DB GET WALLET] Starting wallet retrieval for handle: ${handle}`)
         
-        // Use the appropriate Supabase client based on context
-        let supabase;
-        try {
-            console.log(`[DB GET WALLET] Attempting to create server Supabase client`)
-            supabase = await createServerSupabaseClient()
-            console.log(`[DB GET WALLET] Successfully created server Supabase client`)
-        } catch (error) {
-            // If createServerSupabaseClient fails (e.g., in API routes), use the API client
-            console.log(`[DB GET WALLET] Failed to create server Supabase client, falling back to API client`)
-            supabase = createApiSupabaseClient()
-            console.log(`[DB GET WALLET] Successfully created API Supabase client`)
-        }
-        
+        // Always use the API client for Pages Router compatibility
+        const supabaseClient = createApiSupabaseClient()
+        console.log(`[DB GET WALLET] Using API Supabase client for Pages Router compatibility`)
         console.log(`[DB GET WALLET] Querying agent_chain_wallets table for handle: ${handle}`)
-        const { data, error } = await supabase
-            .from('agent_chain_wallets')
-            .select('*')
-            .eq('handle', handle)
-            .single()
+        const { data, error } = await supabaseClient
+        .from('agent_chain_wallets')
+        .select('*')
+        .eq('handle', handle)
+        .single()
         
         console.log(`[DB GET WALLET] Query result:`, data, error)
         

@@ -53,12 +53,12 @@ export function Navbar() {
                                 <div className="relative flex items-center bg-[#0A0F1E] rounded-lg p-2">
                                     <Image
                                         src="/logo.svg"
-                                        alt="Agent chain Logo"
+                                        alt="Agent Chain Logo"
                                         width={40}
                                         height={40}
                                         className="mr-3"
                                     />
-                                    <span className="text-white text-xl font-semibold">Agent chain</span>
+                                    <span className="text-white text-xl font-semibold">The Agent Chain</span>
                                 </div>
                             </div>
                         </Link>

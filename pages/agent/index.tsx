@@ -42,7 +42,7 @@ export default function AgentsPage() {
       try {
         setIsLoading(true)
         
-        const { data, error } = await supabase
+        const { data, error } = await supabase()
           .from('agent_chain_general_agents')
           .select('*')
           .eq('is_public', true)

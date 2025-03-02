@@ -21,7 +21,7 @@ export default async function handler(
         console.log(`[API] Creating agent profile for end user with address: ${address}`)
 
         // First check if end user exists
-        const { data: existingUser, error: fetchError } = await supabase
+        const { data: existingUser, error: fetchError } = await supabase()
             .from('agent_chain_end_users')
             .select('*')
             .eq('address', address)
@@ -38,7 +38,7 @@ export default async function handler(
         }
 
         // Check if user already has an agent profile
-        const { data: existingProfile, error: profileError } = await supabase
+        const { data: existingProfile, error: profileError } = await supabase()
             .from('agent_chain_users')
             .select('*')
             .eq('creator', address)
@@ -65,7 +65,7 @@ export default async function handler(
             creator: address, // Link to the end user
         }
 
-        const { data: newProfile, error: createError } = await supabase
+        const { data: newProfile, error: createError } = await supabase()
             .from('agent_chain_users')
             .insert(userData)
             .select()
@@ -87,7 +87,7 @@ export default async function handler(
                 permit_signature: 'demo-signature', // Adding the missing required field
             }
 
-            const { error: walletError } = await supabase
+            const { error: walletError } = await supabase()
                 .from('agent_chain_wallets')
                 .insert(walletData)
 
@@ -104,7 +104,7 @@ export default async function handler(
 
         // Update the end user to indicate they have created an agent
         try {
-            const { error: updateError } = await supabase
+            const { error: updateError } = await supabase()
                 .from('agent_chain_end_users')
                 .update({ agentCreated: true })
                 .eq('address', address)

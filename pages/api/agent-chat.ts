@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { agents } from '@/lib/constants'
 import { GeneralAgent, ChatMessage } from '@/lib/types'
 import { getGeneralAgent, getGeneralAgentByHandle } from '@/lib/supabase-utils'
-import { createApiSupabaseClient } from '@/lib/supabase'
 import { askGemini } from '@/lib/gemini'
 
 // Define an extended ChatMessage type for internal use that includes id and timestamp

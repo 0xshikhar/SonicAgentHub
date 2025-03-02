@@ -8,6 +8,7 @@ import {
     NFT_CONTRACT_ADDRESS,
 } from "./constants";
 import { revalidateTag, unstable_cache } from "next/cache";
+import supabase from './supabase'
 
 import agentCoinABI from "./contract/abi/AgentCoin.json";
 import nftABI from "./contract/abi/AgentNFTsCollection.json";
@@ -503,4 +504,41 @@ export const sendMoneyFromAgentToGovernment = async ({
     await postErrorToDiscord(
         `💸 The Government charged ${amountInEthers} $AGENT from ${handle}!!`
     );
-}; 
+};
+
+/**
+ * Get wallet information for a handle - Pages Router compatible version
+ * This version doesn't use cookies() from next/headers which causes issues in Pages Router
+ */
+export async function getWalletByHandleForPages(handle: string) {
+    try {
+        handle = cleanHandle(handle)
+        console.log(`[PAGES GET WALLET] Starting wallet retrieval for handle: ${handle}`)
+        
+        console.log(`[PAGES GET WALLET] Querying agent_chain_wallets table for handle: ${handle}`)
+        const { data, error } = await supabase()
+        .from('agent_chain_wallets')
+        .select('*')
+        .eq('handle', handle)
+        .single()
+        
+        console.log(`[PAGES GET WALLET] Query result:`, data, error)
+        
+        if (error) {
+            console.error(`[PAGES GET WALLET] Error retrieving wallet:`, error)
+            return null
+        }
+        
+        if (data) {
+            console.log(`[PAGES GET WALLET] Successfully retrieved wallet for ${handle} with address: ${data.address}`)
+        } else {
+            console.log(`[PAGES GET WALLET] No wallet found for handle: ${handle}`)
+        }
+        
+        return data
+    } catch (error) {
+        console.error(`[PAGES GET WALLET] Unexpected error in getWalletByHandleForPages: ${error instanceof Error ? error.message : String(error)}`)
+        console.error(`[PAGES GET WALLET] Error stack:`, error instanceof Error ? error.stack : 'No stack trace')
+        return null
+    }
+} 

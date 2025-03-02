@@ -12,10 +12,9 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Agent } from '@/lib/types'
 import LoadingState from '@/components/LoadingState'
-import { getWalletByHandle } from '@/lib/supabase-db'
-import { getBalanceByHandleNoCache } from '@/lib/web3functions'
+import { getBalanceByHandleNoCache, getWalletByHandleForPages } from '@/lib/web3functions'
 import { toast } from 'sonner'
-import { supabase } from '@/lib/supabase'
+import supabase from '@/lib/supabase'
 
 
 // Extended interface for onchain agents with additional properties
@@ -368,7 +367,7 @@ export default function OnchainAgentDetailPage() {
         const handle = typeof agentData.handle === 'string' ? agentData.handle : '';
         
         // Fetch wallet information
-        const walletData = handle ? await getWalletByHandle(handle) : null
+        const walletData = handle ? await getWalletByHandleForPages(handle) : null
         console.log('Wallet data:', walletData)
 
         // Fetch token balance if wallet exists
@@ -399,7 +398,7 @@ export default function OnchainAgentDetailPage() {
 
         // Fetch additional data: action events, tweets, etc.
         const { data: actionEvents } = handle 
-            ? await supabase
+            ? await supabase()
                 .from('agent_chain_action_events')
                 .select('*')
                 .eq('from_handle', handle)
@@ -408,7 +407,7 @@ export default function OnchainAgentDetailPage() {
             : { data: null }
         
         const { data: smolTweets } = handle 
-            ? await supabase
+            ? await supabase()
                 .from('agent_chain_smol_tweets')
                 .select('*')
                 .eq('handle', handle)
@@ -417,7 +416,7 @@ export default function OnchainAgentDetailPage() {
             : { data: null }
             
         const { data: savedTweets } = handle 
-            ? await supabase
+            ? await supabase()
                 .from('agent_chain_saved_tweets')
                 .select('*')
                 .eq('handle', handle)
@@ -617,7 +616,13 @@ export default function OnchainAgentDetailPage() {
 
             // Call the agent-chat API
             try {
-                const response = await fetch('/api/agent-chat', {
+                // Use the onchain-agent-chat API endpoint for onchain agents
+                const apiEndpoint = '/api/onchain-agent-chat';
+                
+                console.log(`[DEBUG] Using API endpoint: ${apiEndpoint} for agent: ${agent.handle}`);
+                console.log(`[DEBUG] Request payload:`, { handle: agent.handle, message: inputMessage });
+                
+                const response = await fetch(apiEndpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -628,11 +633,15 @@ export default function OnchainAgentDetailPage() {
                     }),
                 })
 
+                console.log(`[DEBUG] API response status:`, response.status);
+                console.log(`[DEBUG] API response status text:`, response.statusText);
+                
                 if (!response.ok) {
                     throw new Error(`API responded with status: ${response.status}`)
                 }
 
                 const data = await response.json()
+                console.log('[DEBUG] API response data:', data);
 
                 if (data.success) {
                     // Replace thinking message with actual response

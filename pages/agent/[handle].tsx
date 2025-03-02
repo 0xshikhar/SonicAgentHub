@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ChatBox } from '@/components/ChatBox'
 import { ArrowLeft, Twitter, User, MessageSquare, Info } from 'lucide-react'
 import { AuthCheck } from '@/components/AuthCheck'
-import { supabase } from '@/lib/supabase'
+import supabase from '@/lib/supabase'
 
 // Define the Agent interface based on our database schema
 interface Agent {
@@ -44,7 +44,7 @@ export default function AgentDetailPage() {
       try {
         setIsLoading(true)
         
-        const { data, error } = await supabase
+        const { data, error } = await supabase()
           .from('agent_chain_general_agents')
           .select('*')
           .eq('handle', handle as string)

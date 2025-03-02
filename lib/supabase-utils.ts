@@ -168,16 +168,15 @@ export async function createWallet(walletData: TablesInsert<'agent_chain_wallets
 
 // End user related functions
 export async function getOrCreateEndUser(address: string) {
-    // Use the default supabase client for client-side calls
-    // This avoids the "cookies was called outside a request scope" error
-    const supabase = typeof window !== 'undefined' 
-        ? await import('./supabase').then(mod => mod.default) 
+    // Use the appropriate client based on environment
+    const supabaseClient = typeof window === 'undefined'
+        ? await createServerSupabaseClient()
         : await createActionSupabaseClient()
     
     console.log(`Attempting to get or create end user with address: ${address}`)
     
     // First check if end user exists
-    const { data: existingUser, error: fetchError } = await supabase
+    const { data: existingUser, error: fetchError } = await supabaseClient
         .from('agent_chain_end_users')
         .select('*')
         .eq('address', address)
@@ -203,7 +202,7 @@ export async function getOrCreateEndUser(address: string) {
         agentCreated: false,
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('agent_chain_end_users')
         .insert(userData)
         .select()
