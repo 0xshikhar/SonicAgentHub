@@ -74,7 +74,11 @@ export function AgentTrainingForm() {
   async function onTwitterSubmit(data: TwitterFormValues) {
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/agent-training", {
+      // Get the base URL with window check
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      console.log(`Creating Twitter agent using API endpoint: ${baseUrl}/api/agent-training`);
+      
+      const response = await axios.post(`${baseUrl}/api/agent-training`, {
         action: "createFromTwitter",
         twitterHandle: data.twitterHandle,
       });
@@ -103,7 +107,11 @@ export function AgentTrainingForm() {
   async function onCharacterSubmit(data: CharacterFormValues) {
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/agent-training", {
+      // Get the base URL with window check
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      console.log(`Creating character agent using API endpoint: ${baseUrl}/api/agent-training`);
+      
+      const response = await axios.post(`${baseUrl}/api/agent-training`, {
         action: "createFromCharacter",
         handle: data.handle,
         name: data.name,

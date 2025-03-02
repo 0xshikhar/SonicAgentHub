@@ -1,9 +1,17 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { agents } from '@/lib/constants'
-import { GeneralAgent } from '@/lib/types'
+import { GeneralAgent, ChatMessage } from '@/lib/types'
+import { getGeneralAgent, getGeneralAgentByHandle } from '@/lib/supabase-utils'
+import { createApiSupabaseClient } from '@/lib/supabase'
+import { askGemini } from '@/lib/gemini'
 
-// In a real application, this would connect to an AI service or LLM
-// For now, we'll use a simple mock response system
+// Define an extended ChatMessage type for internal use that includes id and timestamp
+interface ExtendedChatMessage extends ChatMessage {
+    id: string;
+    timestamp: Date;
+}
+
+// Keep mock responses as fallback
 const mockResponses: Record<string, string[]> = {
     'twitter-demo': [
         "That's an interesting perspective! I've been analyzing social media trends and noticed similar patterns.",
@@ -75,6 +83,80 @@ const defaultResponses = [
     "I'm designed to assist with these types of questions. Here's my analysis...",
 ]
 
+// Store conversation history for each user-agent pair
+const conversationHistory: Record<string, ExtendedChatMessage[]> = {}
+
+/**
+ * Generate a dynamic response using Gemini and the agent's system prompt
+ */
+async function generateDynamicResponse(
+    agentId: string,
+    message: string,
+    systemPrompt: string
+): Promise<string> {
+    try {
+        // Create a unique key for this user-agent conversation
+        // In production, you would include a user ID as well
+        const conversationKey = `agent_${agentId}`
+
+        // Initialize conversation history if it doesn't exist
+        if (!conversationHistory[conversationKey]) {
+            conversationHistory[conversationKey] = []
+        }
+
+        // Add user message to history
+        conversationHistory[conversationKey].push({
+            id: `user-${Date.now()}`,
+            role: 'user',
+            content: message,
+            timestamp: new Date()
+        })
+
+        // Keep only the last 10 messages to avoid context length issues
+        if (conversationHistory[conversationKey].length > 10) {
+            conversationHistory[conversationKey] = conversationHistory[conversationKey].slice(-10)
+        }
+
+        // Instead of using askGeminiWithMessagesAndSystemPrompt which has format issues,
+        // we'll use askGemini with a formatted prompt that includes the conversation history
+
+        // Format the conversation history into a prompt
+        const formattedConversation = conversationHistory[conversationKey]
+            .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+            .join('\n\n');
+
+        // Create a complete prompt with system instructions and conversation history
+        const completePrompt = `${systemPrompt}
+
+CONVERSATION HISTORY:
+${formattedConversation}
+
+Please respond to the user's most recent message as the AI agent, staying in character.`;
+
+        // Generate response using Gemini
+        const response = await askGemini({
+            prompt: completePrompt,
+            useCase: "agent-chat"
+        });
+
+        // Clean up the response if needed (remove any "Assistant:" prefix)
+        const cleanedResponse = response.replace(/^(Assistant|AI|Agent):\s*/i, '').trim();
+
+        // Add assistant response to history
+        conversationHistory[conversationKey].push({
+            id: `assistant-${Date.now()}`,
+            role: 'assistant',
+            content: cleanedResponse,
+            timestamp: new Date()
+        });
+
+        return cleanedResponse;
+    } catch (error) {
+        console.error('Error generating dynamic response:', error)
+        throw error
+    }
+}
+
 export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
@@ -94,31 +176,160 @@ export default async function handler(
             })
         }
 
-        // Find the agent
-        const agent = agents.find(a => a.id === handle)
+        // Find the agent in static agents
+        const staticAgent = agents.find(a => a.id === handle)
 
-        if (!agent) {
-            return res.status(404).json({
-                success: false,
-                error: 'Agent not found'
-            })
+        if (staticAgent) {
+            try {
+                // Try to generate a dynamic response first
+                const defaultSystemPrompt = `You are an AI agent based on ${staticAgent.name}. 
+                
+Description: ${staticAgent.description}
+
+When responding to messages, maintain the personality, knowledge, and communication style that would be consistent with this character. Be helpful, informative, and engaging while staying in character.
+
+Keep your responses concise and focused on the user's query.`
+
+                const dynamicResponse = await generateDynamicResponse(
+                    handle,
+                    message,
+                    defaultSystemPrompt
+                )
+
+                return res.status(200).json({
+                    success: true,
+                    message: dynamicResponse,
+                })
+            } catch (error) {
+                console.error('Error generating dynamic response for static agent:', error)
+
+                // Fall back to mock responses
+                const agentResponses = mockResponses[handle] || defaultResponses
+                const randomResponse = agentResponses[Math.floor(Math.random() * agentResponses.length)]
+
+                return res.status(200).json({
+                    success: true,
+                    message: randomResponse,
+                })
+            }
         }
 
-        // In a real application, you would:
-        // 1. Store the conversation history in a database
-        // 2. Call an AI service or LLM with the message and conversation history
-        // 3. Process the response and return it
+        // If not found in static agents, try to get from database
+        try {
+            console.log(`Attempting to fetch agent with handle: ${handle} for chat`);
 
-        // For now, we'll use mock responses
-        const agentResponses = mockResponses[handle] || defaultResponses
-        const randomResponse = agentResponses[Math.floor(Math.random() * agentResponses.length)]
+            // Try to get from general_agents
+            let generalAgent: any = null;
 
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000))
+            try {
+                // First try to get by ID
+                generalAgent = await getGeneralAgent(handle);
+            } catch (error) {
+                console.log(`Agent not found by ID, trying to fetch by handle`);
 
-        return res.status(200).json({
-            success: true,
-            message: randomResponse,
+                try {
+                    // Try with the original handle
+                    generalAgent = await getGeneralAgentByHandle(handle);
+                } catch (handleError) {
+                    console.log(`Agent not found by handle, trying with character- prefix removed`);
+
+                    // If the handle starts with "character-", try to get by the handle part
+                    if (handle && handle.startsWith('character-')) {
+                        const handlePart = handle.replace('character-', '');
+                        console.log(`Trying to fetch by handle part: ${handlePart}`);
+                        generalAgent = await getGeneralAgentByHandle(handlePart);
+                    } else {
+                        throw handleError;
+                    }
+                }
+            }
+
+            if (generalAgent) {
+                try {
+                    // Map database fields to expected properties
+                    const mappedAgent = {
+                        id: generalAgent.id,
+                        handle: generalAgent.handle,
+                        name: generalAgent.name,
+                        description: generalAgent.description || '',
+                        agentType: generalAgent.agent_type,
+                        profilePicture: generalAgent.profile_picture,
+                        twitterHandle: generalAgent.twitter_handle,
+                        traits: generalAgent.traits,
+                        background: generalAgent.background,
+                        systemPrompt: generalAgent.system_prompt,
+                        createdAt: generalAgent.created_at,
+                        createdBy: generalAgent.created_by,
+                        isPublic: generalAgent.is_public,
+                        lifeContext: generalAgent.life_context
+                    };
+
+                    // Extract system prompt from life_context if available
+                    let systemPrompt = mappedAgent.systemPrompt;
+
+                    // If no system prompt is available, check if it's embedded in life_context
+                    if (!systemPrompt && mappedAgent.lifeContext && mappedAgent.lifeContext.includes('SYSTEM PROMPT:')) {
+                        const systemPromptMatch = mappedAgent.lifeContext.match(/SYSTEM PROMPT:\n([\s\S]+)$/);
+                        if (systemPromptMatch && systemPromptMatch[1]) {
+                            systemPrompt = systemPromptMatch[1];
+                        }
+                    }
+
+                    // If still no system prompt, create a default one
+                    if (!systemPrompt) {
+                        systemPrompt = `You are an AI agent based on ${mappedAgent.name}. 
+                        
+Description: ${mappedAgent.description || 'No description available'}
+
+${mappedAgent.agentType === 'twitter' ? `Twitter handle: @${mappedAgent.twitterHandle || mappedAgent.handle}` : ''}
+${mappedAgent.traits && mappedAgent.traits.length > 0 ? `Personality traits: ${mappedAgent.traits.join(', ')}` : ''}
+${mappedAgent.background ? `Background: ${mappedAgent.background}` : ''}
+
+When responding to messages, maintain the personality, knowledge, and communication style that would be consistent with this character. Be helpful, informative, and engaging while staying in character.
+
+Keep your responses concise and focused on the user's query.`;
+                    }
+
+                    // Generate dynamic response
+                    const dynamicResponse = await generateDynamicResponse(
+                        handle,
+                        message,
+                        systemPrompt
+                    )
+
+                    return res.status(200).json({
+                        success: true,
+                        message: dynamicResponse,
+                    })
+                } catch (error) {
+                    console.error('Error generating dynamic response for database agent:', error)
+
+                    // Fall back to mock responses based on agent type
+                    const agentType = generalAgent.agent_type;
+                    let responsePool;
+
+                    if (agentType === 'twitter') {
+                        responsePool = mockResponses['twitter-demo'] || defaultResponses;
+                    } else {
+                        responsePool = mockResponses['character-demo'] || defaultResponses;
+                    }
+
+                    const randomResponse = responsePool[Math.floor(Math.random() * responsePool.length)];
+
+                    return res.status(200).json({
+                        success: true,
+                        message: randomResponse,
+                    });
+                }
+            }
+        } catch (dbError) {
+            console.error('Error fetching agent from database:', dbError);
+        }
+
+        // If we get here, the agent was not found
+        return res.status(404).json({
+            success: false,
+            error: 'Agent not found'
         })
     } catch (error) {
         console.error('Error in agent chat API:', error)

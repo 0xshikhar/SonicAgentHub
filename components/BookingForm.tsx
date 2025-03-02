@@ -28,7 +28,11 @@ export default function BookingForm({ agentId, agentName, pricePerHour }: Bookin
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/bookings', {
+      // Get the base URL with window check
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      console.log(`Creating booking using API endpoint: ${baseUrl}/api/bookings`);
+      
+      const response = await fetch(`${baseUrl}/api/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

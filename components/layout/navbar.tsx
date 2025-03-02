@@ -13,8 +13,6 @@ import { showToast } from '@/lib/toast'
 const navigation = [
     { name: 'Home', href: '/' },
     { name: 'Agents', href: '/agents' },
-    { name: 'Tweets', href: '/tweets' },
-    { name: 'Dashboard', href: '/dashboard' },
     { name: 'Main', href: '/main' }
 ];
 

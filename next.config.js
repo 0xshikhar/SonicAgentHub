@@ -8,6 +8,7 @@ module.exports = {
       'i.imgur.com',
       'images.unsplash.com',
       'utfs.io',
+      'ui-avatars.com',
       'cdn.discordapp.com',
     ],
   },

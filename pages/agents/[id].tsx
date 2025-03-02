@@ -8,6 +8,7 @@ import LoadingState from '@/components/LoadingState'
 import { ChatMessage } from '@/components/ChatMessage'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { agents as staticAgents } from '@/lib/constants'
 
 interface Message {
     id: string
@@ -16,10 +17,24 @@ interface Message {
     timestamp: Date
 }
 
+// Extended Agent type with source information
+interface ExtendedAgent extends Agent {
+    agentType?: 'twitter' | 'character'
+    source?: 'general_agents' | 'agent_chain_users' | 'local'
+    stats?: {
+        users?: number
+        transactions?: number
+        volume?: number
+    }
+    contractAddress?: string
+    twitter?: string
+    features?: string[]
+}
+
 export default function AgentDetailPage() {
     const router = useRouter()
     const { id } = router.query
-    const [agent, setAgent] = useState<Agent | null>(null)
+    const [agent, setAgent] = useState<ExtendedAgent | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'profile' | 'chat'>('profile')
     const [messages, setMessages] = useState<Message[]>([])
@@ -34,10 +49,40 @@ export default function AgentDetailPage() {
         async function fetchAgentDetails() {
             try {
                 setIsLoading(true)
-                const response = await axios.post('/api/agent-training', {
+                
+                // First check if it's a static agent
+                const staticAgent = staticAgents.find(a => a.id === id)
+
+                if (staticAgent) {
+                    // Mark as local source
+                    setAgent({
+                        ...staticAgent,
+                        source: 'local'
+                    })
+                    
+                    // Add system welcome message
+                    setMessages([
+                        {
+                            id: 'welcome',
+                            role: 'assistant',
+                            content: `Hi there! I'm ${staticAgent.name}. How can I assist you today?`,
+                            timestamp: new Date()
+                        }
+                    ])
+                    setIsLoading(false)
+                    return
+                }
+                
+                // If not static, fetch from API
+                // Get the current origin to ensure we're using the correct URL
+                const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                console.log(`Using base URL: ${baseUrl} for API request`);
+                
+                const response = await axios.post(`${baseUrl}/api/agent-training`, {
                     action: 'getAgent',
-                    agentId: id
-                })
+                    agentId: id,
+                    handle: id // Include handle as well to support lookup by handle
+                });
 
                 if (response.data.success) {
                     setAgent(response.data.data)
@@ -80,26 +125,43 @@ export default function AgentDetailPage() {
             timestamp: new Date()
         }
 
+        // Add user message to the chat
         setMessages(prev => [...prev, userMessage])
         setInputMessage('')
         setIsSending(true)
 
+        // Add a temporary "thinking" message from the assistant
+        const thinkingMessageId = `thinking-${Date.now()}`
+        const thinkingMessage: Message = {
+            id: thinkingMessageId,
+            role: 'assistant',
+            content: '...',
+            timestamp: new Date()
+        }
+        
+        setMessages(prev => [...prev, thinkingMessage])
+
         try {
+            // Get the current origin to ensure we're using the correct URL
+            const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+            console.log(`Using base URL: ${baseUrl} for chat API request`);
+            
             // Call API to get agent response
-            const response = await axios.post('/api/agent-chat', {
+            const response = await axios.post(`${baseUrl}/api/agent-chat`, {
                 handle: agent.id,
                 message: inputMessage
-            })
+            });
 
             if (response.data.success) {
-                const agentMessage: Message = {
-                    id: `assistant-${Date.now()}`,
-                    role: 'assistant',
-                    content: response.data.message,
-                    timestamp: new Date()
-                }
-
-                setMessages(prev => [...prev, agentMessage])
+                // Remove the thinking message and add the real response
+                setMessages(prev => 
+                    prev.filter(msg => msg.id !== thinkingMessageId).concat({
+                        id: `assistant-${Date.now()}`,
+                        role: 'assistant',
+                        content: response.data.message,
+                        timestamp: new Date()
+                    })
+                )
             } else {
                 throw new Error(response.data.error || 'Failed to get response')
             }
@@ -107,17 +169,46 @@ export default function AgentDetailPage() {
             console.error('Error getting agent response:', error)
             showToast.error('Failed to get response from agent')
 
-            // Add a fallback error message from the agent
-            const errorMessage: Message = {
-                id: `error-${Date.now()}`,
-                role: 'assistant',
-                content: "I'm sorry, I'm having trouble processing your request right now. Please try again later.",
-                timestamp: new Date()
-            }
-
-            setMessages(prev => [...prev, errorMessage])
+            // Remove the thinking message and add an error message
+            setMessages(prev => 
+                prev.filter(msg => msg.id !== thinkingMessageId).concat({
+                    id: `error-${Date.now()}`,
+                    role: 'assistant',
+                    content: "I'm sorry, I'm having trouble processing your request right now. Please try again later.",
+                    timestamp: new Date()
+                })
+            )
         } finally {
             setIsSending(false)
+        }
+    }
+
+    // Helper function to determine agent badge type
+    const getAgentBadge = (agent: ExtendedAgent) => {
+        if (agent.source === 'local') {
+            return {
+                text: 'Primary',
+                textColor: 'text-emerald-400',
+                bgColor: 'bg-emerald-400'
+            }
+        } else if (agent.source === 'agent_chain_users') {
+            return {
+                text: 'Onchain',
+                textColor: 'text-blue-400',
+                bgColor: 'bg-blue-400'
+            }
+        } else if (agent.agentType === 'twitter' || agent.twitter) {
+            return {
+                text: 'Twitter',
+                textColor: 'text-purple-400',
+                bgColor: 'bg-purple-400'
+            }
+        } else {
+            return {
+                text: 'Character',
+                textColor: 'text-amber-400',
+                bgColor: 'bg-amber-400'
+            }
         }
     }
 
@@ -140,6 +231,8 @@ export default function AgentDetailPage() {
             </div>
         )
     }
+
+    const badge = getAgentBadge(agent)
 
     return (
         <div className="min-h-screen bg-[#0A0E1A]">
@@ -165,6 +258,14 @@ export default function AgentDetailPage() {
                                 </div>
                             </div>
 
+                            {/* Source Badge */}
+                            <div className="mt-4 px-3 py-1.5 rounded-full text-xs font-medium bg-black/30 backdrop-blur-md border border-white/10">
+                                <span className={`flex items-center ${badge.textColor}`}>
+                                    <span className={`w-1.5 h-1.5 ${badge.bgColor} rounded-full mr-1.5`}></span>
+                                    {badge.text}
+                                </span>
+                            </div>
+
                             {/* Agent Name and Score */}
                             <div className="mt-4 text-center md:text-left">
                                 <h1 className="text-3xl font-bold text-white">{agent.name}</h1>
@@ -175,8 +276,44 @@ export default function AgentDetailPage() {
                                     </div>
                                     <span className="mx-2 text-gray-500">•</span>
                                     <span className="text-gray-400">v{agent.version}</span>
+                                    {agent.twitter && (
+                                        <>
+                                            <span className="mx-2 text-gray-500">•</span>
+                                            <a 
+                                                href={`https://twitter.com/${agent.twitter.replace('@', '')}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-purple-400 hover:text-purple-300 transition-colors"
+                                            >
+                                                {agent.twitter}
+                                            </a>
+                                        </>
+                                    )}
                                 </div>
                             </div>
+
+                            {/* Agent Stats */}
+                            <div className="grid grid-cols-3 gap-4 mt-6 w-full max-w-xs">
+                                <div className="bg-[#131B31] rounded-xl p-3 text-center backdrop-blur-sm">
+                                    <div className="text-sm text-gray-400">Users</div>
+                                    <div className="text-white font-medium mt-1">
+                                        {agent.stats?.users?.toLocaleString() || '0'}
+                                    </div>
+                                </div>
+                                <div className="bg-[#131B31] rounded-xl p-3 text-center backdrop-blur-sm">
+                                    <div className="text-sm text-gray-400">Txns</div>
+                                    <div className="text-white font-medium mt-1">
+                                        {agent.stats?.transactions?.toLocaleString() || '0'}
+                                    </div>
+                                </div>
+                                <div className="bg-[#131B31] rounded-xl p-3 text-center backdrop-blur-sm">
+                                    <div className="text-sm text-gray-400">Volume</div>
+                                    <div className="text-white font-medium mt-1">
+                                        ${((agent.stats?.volume || 0) / 1000000).toFixed(1)}M
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         {/* Agent Details */}
                         <div className="flex-1">
@@ -229,32 +366,115 @@ export default function AgentDetailPage() {
                                         </div>
                                     </div>
 
-                                    {/* Life Goals (inspired by the SMOL Universe image) */}
-                                    <div>
-                                        <h2 className="text-xl font-semibold text-white mb-3">Life Goals</h2>
-                                        <div className="space-y-4">
+                                    {/* Twitter Info (only for twitter-based agents) */}
+                                    {(agent.agentType === 'twitter' || agent.twitter) && (
+                                        <div>
+                                            <h2 className="text-xl font-semibold text-white mb-3">Twitter Presence</h2>
                                             <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                                                <h3 className="font-medium text-white mb-2">Resident Community Architect</h3>
+                                                <div className="flex items-center mb-3">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z" />
+                                                    </svg>
+                                                    <a 
+                                                        href={`https://twitter.com/${agent.twitter?.replace('@', '')}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-white font-medium hover:text-blue-400 transition-colors"
+                                                    >
+                                                        {agent.twitter}
+                                                    </a>
+                                                </div>
                                                 <p className="text-gray-300 text-sm">
-                                                    Establish and nurture a thriving Web3 and AI innovation hub, fostering a resilient tech community.
+                                                    This AI agent is trained on the Twitter profile, tweets, and interactions of {agent.name}. 
+                                                    It aims to replicate their communication style, interests, and expertise.
                                                 </p>
-                                            </div>
-
-                                            <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                                                <h3 className="font-medium text-white mb-2">Ecosystem Connector</h3>
-                                                <p className="text-gray-300 text-sm">
-                                                    Act as a bridge connecting the tech ecosystem with global networks, facilitating knowledge exchange and collaboration.
-                                                </p>
-                                            </div>
-
-                                            <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                                                <h3 className="font-medium text-white mb-2">Agile Innovator</h3>
-                                                <p className="text-gray-300 text-sm">
-                                                    Apply agile methodologies to rapidly develop and adapt the innovation hub to meet evolving needs.
-                                                </p>
+                                                <div className="mt-3 flex space-x-2">
+                                                    <span className="px-2 py-1 bg-[#0D1425] text-purple-400 rounded-lg text-xs">AI Personality</span>
+                                                    <span className="px-2 py-1 bg-[#0D1425] text-purple-400 rounded-lg text-xs">Twitter Data</span>
+                                                    <span className="px-2 py-1 bg-[#0D1425] text-purple-400 rounded-lg text-xs">Interactive</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
+
+                                    {/* Character Info (only for character agents) */}
+                                    {agent.agentType === 'character' && !agent.twitter && (
+                                        <div>
+                                            <h2 className="text-xl font-semibold text-white mb-3">Character Profile</h2>
+                                            <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
+                                                <h3 className="font-medium text-white mb-2">Custom AI Personality</h3>
+                                                <p className="text-gray-300 text-sm">
+                                                    This is a custom character-based AI agent with a unique personality and backstory.
+                                                    It has been designed to embody specific traits and characteristics.
+                                                </p>
+                                                <div className="mt-3 flex space-x-2">
+                                                    <span className="px-2 py-1 bg-[#0D1425] text-amber-400 rounded-lg text-xs">Custom Character</span>
+                                                    <span className="px-2 py-1 bg-[#0D1425] text-amber-400 rounded-lg text-xs">Role Playing</span>
+                                                    <span className="px-2 py-1 bg-[#0D1425] text-amber-400 rounded-lg text-xs">Creative</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Onchain Info (only for onchain agents) */}
+                                    {agent.source === 'agent_chain_users' && (
+                                        <div>
+                                            <h2 className="text-xl font-semibold text-white mb-3">Onchain Presence</h2>
+                                            <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
+                                                <div className="flex items-center mb-3">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                                                    </svg>
+                                                    <a 
+                                                        href={`https://etherscan.io/address/${agent.contractAddress}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-white font-medium hover:text-blue-400 transition-colors"
+                                                    >
+                                                        View on Etherscan
+                                                    </a>
+                                                </div>
+                                                <p className="text-gray-300 text-sm">
+                                                    This is an onchain AI agent with its own wallet and ability to interact with blockchain protocols.
+                                                    It can perform transactions, analyze on-chain data, and provide insights based on blockchain activity.
+                                                </p>
+                                                <div className="mt-3 flex space-x-2">
+                                                    <span className="px-2 py-1 bg-[#0D1425] text-blue-400 rounded-lg text-xs">Onchain</span>
+                                                    <span className="px-2 py-1 bg-[#0D1425] text-blue-400 rounded-lg text-xs">Autonomous</span>
+                                                    <span className="px-2 py-1 bg-[#0D1425] text-blue-400 rounded-lg text-xs">Web3 Native</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Life Goals (for local agents or if not specified) */}
+                                    {(agent.source === 'local' || (!agent.agentType && !agent.twitter && agent.source !== 'agent_chain_users')) && (
+                                        <div>
+                                            <h2 className="text-xl font-semibold text-white mb-3">Life Goals</h2>
+                                            <div className="space-y-4">
+                                                <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
+                                                    <h3 className="font-medium text-white mb-2">Resident Community Architect</h3>
+                                                    <p className="text-gray-300 text-sm">
+                                                        Establish and nurture a thriving Web3 and AI innovation hub, fostering a resilient tech community.
+                                                    </p>
+                                                </div>
+
+                                                <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
+                                                    <h3 className="font-medium text-white mb-2">Ecosystem Connector</h3>
+                                                    <p className="text-gray-300 text-sm">
+                                                        Act as a bridge connecting the tech ecosystem with global networks, facilitating knowledge exchange and collaboration.
+                                                    </p>
+                                                </div>
+
+                                                <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
+                                                    <h3 className="font-medium text-white mb-2">Agile Innovator</h3>
+                                                    <p className="text-gray-300 text-sm">
+                                                        Apply agile methodologies to rapidly develop and adapt the innovation hub to meet evolving needs.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -296,8 +516,7 @@ export default function AgentDetailPage() {
                                             >
                                                 {isSending ? (
                                                     <span className="flex items-center">
-                                                        <LoadingState />
-                                                        <span className="ml-2">Sending</span>
+                                                        <LoadingState variant="inline" text="Thinking" />
                                                     </span>
                                                 ) : (
                                                     'Send'

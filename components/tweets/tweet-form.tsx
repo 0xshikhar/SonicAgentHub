@@ -45,8 +45,12 @@ export function TweetForm({ onSuccess }: TweetFormProps) {
                 throw new Error('User profile not found')
             }
 
+            // Get the base URL with window check
+            const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+            console.log(`Creating tweet using API endpoint: ${baseUrl}/api/tweets/create`);
+
             // Create the tweet
-            const response = await fetch('/api/tweets/create', {
+            const response = await fetch(`${baseUrl}/api/tweets/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

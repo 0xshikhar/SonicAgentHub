@@ -25,7 +25,11 @@ export default function AgentsPage() {
     async function fetchAgents() {
       try {
         setIsLoading(true);
-        const response = await axios.post('/api/agent-training', {
+        // Get the current origin to ensure we're using the correct URL
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        console.log(`Using base URL: ${baseUrl} for agents list API request`);
+        
+        const response = await axios.post(`${baseUrl}/api/agent-training`, {
           action: 'getGeneralAgents'
         });
         

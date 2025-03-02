@@ -12,6 +12,15 @@ export interface Agent {
     features?: string[];
     metrics?: AgentMetric[];
     reviews?: AgentReview[];
+    contractAddress?: string;
+    stats?: {
+        users?: number;
+        transactions?: number;
+        volume?: number;
+    };
+    chains?: string[];
+    agentType?: 'twitter' | 'character';
+    source?: 'general_agents' | 'agent_chain_users' | 'local';
 }
 
 export interface GeneralAgent {

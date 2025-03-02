@@ -5,7 +5,7 @@ import { createAgentFromTwitterProfile, createAgentFromCharacterProfile, convert
 import { agents as staticAgents } from "@/lib/constants";
 import { postErrorToDiscord } from "@/lib/discord";
 import { Agent, GeneralAgent } from "@/lib/types";
-import { createGeneralAgent, getGeneralAgent, listGeneralAgents } from "@/lib/supabase-utils";
+import { createGeneralAgent, getGeneralAgent, listGeneralAgents, getGeneralAgentByHandle } from "@/lib/supabase-utils";
 import type { Json } from "@/types/supabase";
 import { createApiSupabaseClient } from "@/lib/supabase"; // Import the API client creator instead of the default client
 
@@ -259,6 +259,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               background: background || ""
             });
             
+            // Add source and agent type information
+            agent.agentType = 'character';
+            agent.source = 'general_agents';
+            
             // Store in memory for current session
             dynamicAgents.push(agent);
             
@@ -302,6 +306,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                 traits: traitsArray,
                 background: background || ""
               });
+              
+              // Add source and agent type information
+              agent.agentType = 'character';
+              agent.source = 'general_agents';
               
               // Store in memory for current session
               dynamicAgents.push(agent);
@@ -500,12 +508,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
       
       case "getAgent": {
+        const { handle } = req.body; // Extract handle if provided
+        
         // First check if it's a static agent
         const staticAgent = staticAgents.find(a => a.id === agentId);
         if (staticAgent) {
           return res.status(200).json({ 
             success: true, 
-            data: staticAgent,
+            data: {
+              ...staticAgent,
+              source: 'local'
+            },
             message: `Retrieved static agent: ${staticAgent.name}`
           });
         }
@@ -520,45 +533,224 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           });
         }
         
-        // Finally, try to get it from the database
-        try {
-          const generalAgent = await getGeneralAgent(agentId);
+        // Check if the agentId starts with "character-" and try to find it in dynamic agents
+        if (agentId && agentId.startsWith('character-')) {
+          const handlePart = agentId.replace('character-', '');
+          const dynamicAgentByHandle = dynamicAgents.find(a => a.id === handlePart);
           
-          // Convert to Agent format
-          let agent: Agent;
-          
-          if (generalAgent.agent_type === 'twitter') {
-            agent = createAgentFromTwitterProfile({
-              handle: generalAgent.handle,
-              name: generalAgent.name,
-              description: generalAgent.description || "",
-              profileImage: generalAgent.profile_picture || "/logos/twitter.png"
-            });
-          } else {
-            // Handle traits properly based on its type
-            let traitsArray: string[] = [];
-            if (typeof generalAgent.traits === 'string') {
-              traitsArray = generalAgent.traits.split(',').map(t => t.trim());
-            } else if (Array.isArray(generalAgent.traits)) {
-              traitsArray = generalAgent.traits.map(t => String(t));
-            }
-            
-            agent = createAgentFromCharacterProfile({
-              handle: generalAgent.handle,
-              name: generalAgent.name,
-              description: generalAgent.description || "",
-              profileImage: generalAgent.profile_picture || `/avatars/${Math.floor(Math.random() * 10) + 1}.png`,
-              traits: traitsArray,
-              background: generalAgent.background || ""
+          if (dynamicAgentByHandle) {
+            return res.status(200).json({ 
+              success: true, 
+              data: dynamicAgentByHandle,
+              message: `Retrieved dynamic agent by handle part: ${dynamicAgentByHandle.name}`
             });
           }
+        }
+        
+        // Finally, try to get it from the database
+        try {
+          console.log(`Attempting to fetch agent with ID: ${agentId}`);
           
-          return res.status(200).json({ 
-            success: true, 
-            data: agent,
-            message: `Retrieved general agent: ${agent.name}`
-          });
+          // Create a Supabase client that can bypass RLS
+          const supabase = createApiSupabaseClient();
+          
+          // If the agentId starts with "character-", try to get by the handle part first
+          if (agentId && agentId.startsWith('character-')) {
+            const handlePart = agentId.replace('character-', '');
+            console.log(`Agent ID starts with character-, trying to fetch by handle part: ${handlePart}`);
+            
+            try {
+              // Try to get from agent_chain_general_agents table
+              const { data: generalAgent, error: generalAgentError } = await supabase
+                .from('agent_chain_general_agents')
+                .select('*')
+                .eq('handle', handlePart)
+                .single();
+              
+              if (generalAgentError) throw generalAgentError;
+              
+              // Convert to Agent format
+              let agent: Agent;
+              
+              if (generalAgent.agent_type === 'twitter') {
+                agent = createAgentFromTwitterProfile({
+                  handle: generalAgent.handle,
+                  name: generalAgent.name,
+                  description: generalAgent.description || "",
+                  profileImage: generalAgent.profile_picture || "/logos/twitter.png"
+                });
+                
+                // Add source information
+                agent = {
+                  ...agent,
+                  agentType: 'twitter',
+                  source: 'general_agents'
+                };
+              } else {
+                // Handle traits properly based on its type
+                let traitsArray: string[] = [];
+                if (typeof generalAgent.traits === 'string') {
+                  traitsArray = generalAgent.traits.split(',').map(t => t.trim());
+                } else if (Array.isArray(generalAgent.traits)) {
+                  traitsArray = generalAgent.traits.map(t => String(t));
+                }
+                
+                agent = createAgentFromCharacterProfile({
+                  handle: generalAgent.handle,
+                  name: generalAgent.name,
+                  description: generalAgent.description || "",
+                  profileImage: generalAgent.profile_picture || `/avatars/${Math.floor(Math.random() * 10) + 1}.png`,
+                  traits: traitsArray,
+                  background: generalAgent.background || ""
+                });
+                
+                // Add source information
+                agent = {
+                  ...agent,
+                  agentType: 'character',
+                  source: 'general_agents'
+                };
+              }
+              
+              return res.status(200).json({ 
+                success: true, 
+                data: agent,
+                message: `Retrieved general agent by handle part: ${agent.name}`
+              });
+            } catch (handlePartError) {
+              console.log(`Failed to fetch by handle part, continuing with normal flow: ${handlePartError}`);
+              // Continue with normal flow
+            }
+          }
+          
+          // Try to get from general_agents first using the helper functions
+          try {
+            // First try to get by ID
+            let generalAgent;
+            try {
+              generalAgent = await getGeneralAgent(agentId);
+            } catch (error) {
+              console.log(`Agent not found by ID, trying to fetch by handle: ${handle || agentId}`);
+              
+              try {
+                // Try with the original handle
+                generalAgent = await getGeneralAgentByHandle(handle || agentId);
+              } catch (handleError) {
+                console.log(`Agent not found by handle, trying with character- prefix removed`);
+                
+                // If the ID starts with "character-", try to get by the handle part
+                if (agentId && agentId.startsWith('character-')) {
+                  const handlePart = agentId.replace('character-', '');
+                  console.log(`Trying to fetch by handle part: ${handlePart}`);
+                  generalAgent = await getGeneralAgentByHandle(handlePart);
+                } else if (handle && handle.startsWith('character-')) {
+                  const handlePart = handle.replace('character-', '');
+                  console.log(`Trying to fetch by handle part: ${handlePart}`);
+                  generalAgent = await getGeneralAgentByHandle(handlePart);
+                } else {
+                  throw handleError;
+                }
+              }
+            }
+            
+            // Convert to Agent format
+            let agent: Agent;
+            
+            if (generalAgent.agent_type === 'twitter') {
+              agent = createAgentFromTwitterProfile({
+                handle: generalAgent.handle,
+                name: generalAgent.name,
+                description: generalAgent.description || "",
+                profileImage: generalAgent.profile_picture || "/logos/twitter.png"
+              });
+              
+              // Add source information
+              agent = {
+                ...agent,
+                agentType: 'twitter',
+                source: 'general_agents'
+              };
+            } else {
+              // Handle traits properly based on its type
+              let traitsArray: string[] = [];
+              if (typeof generalAgent.traits === 'string') {
+                traitsArray = generalAgent.traits.split(',').map(t => t.trim());
+              } else if (Array.isArray(generalAgent.traits)) {
+                traitsArray = generalAgent.traits.map(t => String(t));
+              }
+              
+              agent = createAgentFromCharacterProfile({
+                handle: generalAgent.handle,
+                name: generalAgent.name,
+                description: generalAgent.description || "",
+                profileImage: generalAgent.profile_picture || `/avatars/${Math.floor(Math.random() * 10) + 1}.png`,
+                traits: traitsArray,
+                background: generalAgent.background || ""
+              });
+              
+              // Add source information
+              agent = {
+                ...agent,
+                agentType: 'character',
+                source: 'general_agents'
+              };
+            }
+            
+            return res.status(200).json({ 
+              success: true, 
+              data: agent,
+              message: `Retrieved general agent: ${agent.name}`
+            });
+          } catch (generalAgentError) {
+            console.log("Agent not found in general_agents, trying agent_chain_users");
+            
+            // If not found in general_agents, try agent_chain_users
+            try {
+              // Create a Supabase client that can bypass RLS
+              const supabase = createApiSupabaseClient();
+              
+              const { data: userAgent, error: userAgentError } = await supabase
+                .from('agent_chain_users')
+                .select('*')
+                .eq('handle', agentId)
+                .single();
+              
+              if (userAgentError) throw userAgentError;
+              
+              // Convert to Agent format
+              const agent = {
+                id: userAgent.handle,
+                name: userAgent.display_name || userAgent.handle,
+                description: userAgent.bio || "",
+                category: 'Social',
+                chains: ['ETH', 'Polygon'],
+                version: '1.0.0',
+                score: 4.5,
+                imageUrl: userAgent.profile_picture || "/logos/twitter.png",
+                contractAddress: `0x${userAgent.handle}`,
+                twitter: `@${userAgent.handle}`,
+                stats: {
+                  users: 0,
+                  transactions: 0,
+                  volume: 0,
+                },
+                features: ['Twitter Analysis', 'Personality Mirroring', 'Content Generation'],
+                agentType: 'twitter',
+                source: 'agent_chain_users'
+              };
+              
+              return res.status(200).json({ 
+                success: true, 
+                data: agent,
+                message: `Retrieved user agent: ${agent.name}`
+              });
+            } catch (userAgentError) {
+              console.error("Agent not found in agent_chain_users either:", userAgentError);
+              throw new Error(`Agent not found: ${agentId}`);
+            }
+          }
         } catch (error) {
+          console.error(`Error fetching agent ${agentId}:`, error);
           return res.status(404).json({ 
             success: false, 
             error: `Agent not found: ${agentId}`

@@ -24,7 +24,22 @@ export const askGemini = async ({
 
   const genAI = new GoogleGenerativeAI(RANDOM_GEMINI_API_KEY);
 
-  const model = genAI.getGenerativeModel({ model: modelName });
+  // Set temperature based on use case
+  let temperature = 0.2; // Default temperature
+  
+  // Use higher temperature for agent chat to make responses more dynamic
+  if (useCase === "agent-chat") {
+    temperature = 0.7;
+    console.log(" 🧠  calling Gemini for agent chat with temperature: " + temperature);
+  }
+
+  const model = genAI.getGenerativeModel({ 
+    model: modelName,
+    generationConfig: {
+      temperature: temperature,
+    },
+  });
+  
   console.log(" 🧠  calling Gemini... [" + useCase + "]");
 
   const result = await model.generateContent(prompt);

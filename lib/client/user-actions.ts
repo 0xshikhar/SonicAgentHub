@@ -18,8 +18,12 @@ export async function storeWalletConnectionClient({ address }: { address: string
     // Create the promise and store it in the cache
     const promise = (async () => {
         try {
+            // Get the base URL with window check
+            const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+            console.log(`[Client Action] Using API endpoint: ${baseUrl}/api/users/wallet-connection`);
+            
             // Call the API endpoint
-            const response = await axios.post('/api/users/wallet-connection', { address })
+            const response = await axios.post(`${baseUrl}/api/users/wallet-connection`, { address })
             console.log(`[Client Action] Successfully stored user:`, response.data)
             
             return {

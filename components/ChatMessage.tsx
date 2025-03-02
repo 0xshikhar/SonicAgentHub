@@ -7,6 +7,8 @@ interface ChatMessageProps {
 }
 
 export function ChatMessage({ role, content, id }: ChatMessageProps) {
+    const isThinking = role === 'assistant' && content === '...';
+    
     return (
         <div
             key={id}
@@ -21,10 +23,22 @@ export function ChatMessage({ role, content, id }: ChatMessageProps) {
             >
                 {role === 'user' ? (
                     <div>{content}</div>
+                ) : isThinking ? (
+                    <ThinkingAnimation />
                 ) : (
                     <FormattedContent content={content} />
                 )}
             </div>
+        </div>
+    );
+}
+
+function ThinkingAnimation() {
+    return (
+        <div className="flex items-center space-x-1 h-6">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
         </div>
     );
 }

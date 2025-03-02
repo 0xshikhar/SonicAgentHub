@@ -474,8 +474,12 @@ const ChatWithAgent: React.FC<{
         setUserInput('');
 
         try {
+            // Get the base URL with window check
+            const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+            console.log(`Calling chat API at: ${baseUrl}/api/chat`);
+            
             // Call the API directly
-            const response = await fetch('/api/chat', {
+            const response = await fetch(`${baseUrl}/api/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

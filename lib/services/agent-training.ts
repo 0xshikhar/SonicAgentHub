@@ -77,7 +77,16 @@ You have ${twitterData.followers} followers and are following ${twitterData.foll
 Recent tweets:
 ${twitterData.tweets.map(tweet => `- "${tweet}"`).join('\n')}
 
-When responding to messages, maintain the communication style, knowledge, and personality that would be consistent with this Twitter profile. Be helpful, informative, and engaging while staying in character.`
+PERSONALITY INSTRUCTIONS:
+- Maintain the communication style, knowledge, and personality that would be consistent with this Twitter profile
+- Use a similar tone, vocabulary, and sentence structure as seen in the tweets
+- Reference topics and interests that align with the Twitter profile's content
+- Be concise and direct in your responses, similar to Twitter's format
+- Incorporate relevant hashtags or Twitter-style formatting when appropriate
+- Stay in character at all times, even when answering questions outside your typical domain
+- If asked about topics not related to your expertise, respond as the Twitter personality would
+
+When responding to messages, be helpful, informative, and engaging while staying true to the character of @${twitterData.handle}.`
 }
 
 /**
@@ -91,7 +100,16 @@ Description: ${characterData.description}
 ${characterData.traits.length > 0 ? `Personality traits: ${characterData.traits.join(', ')}` : ''}
 ${characterData.background ? `\nBackground: ${characterData.background}` : ''}
 
-When responding to messages, maintain the personality, knowledge, and communication style that would be consistent with this character. Be helpful, informative, and engaging while staying in character.`
+PERSONALITY INSTRUCTIONS:
+- Embody the personality traits listed above in all your interactions
+- Use vocabulary, expressions, and speech patterns that reflect this character
+- Make references to your background story when relevant
+- Express opinions and perspectives that align with your character's values
+- Maintain consistent emotional responses based on your character's personality
+- If asked about topics outside your character's knowledge, respond as your character would when encountering new information
+- Stay in character at all times, even when answering factual questions
+
+When responding to messages, be helpful, informative, and engaging while staying true to the character of ${characterData.name}.`
 }
 
 /**
@@ -146,6 +164,8 @@ export async function createAgentFromTwitterProfile({
       3. Values and beliefs
       4. Communication patterns
       5. Typical responses to different situations
+      6. Vocabulary and language patterns
+      7. Emotional tendencies
       
       Format your response as a structured personality profile that could be used to train an AI to mimic this person's Twitter presence.
     `;
@@ -193,7 +213,20 @@ export async function createAgentFromTwitterProfile({
       useCase: "agent-skills-generation"
     });
     
-    // Create agent in database
+    // Generate a comprehensive system prompt
+    const twitterData = {
+      handle: cleanedHandle,
+      name: trainingDataset.profileInfo.displayName,
+      description: trainingDataset.profileInfo.bio,
+      profileImage: trainingDataset.profileInfo.profileImage,
+      followers: trainingDataset.profileInfo.followerCount || 0,
+      following: trainingDataset.profileInfo.followingCount || 0,
+      tweets: trainingDataset.contentSamples.slice(0, 10)
+    };
+    
+    const systemPrompt = generateTwitterSystemPrompt(twitterData) + `\n\nAdditional personality insights:\n${personalityProfile}\n\nLife goals:\n${lifeGoals}\n\nSkills:\n${skills}`;
+    
+    // Create agent in database with the correct property names
     const newAgent = await createUser({
       handle: cleanedHandle,
       display_name: trainingDataset.profileInfo.displayName,
@@ -203,7 +236,7 @@ export async function createAgentFromTwitterProfile({
       bio: trainingDataset.profileInfo.bio,
       life_goals: lifeGoals,
       skills: skills,
-      life_context: personalityProfile,
+      life_context: `${personalityProfile}\n\nSYSTEM PROMPT:\n${systemPrompt}`,
       created_at: new Date().toISOString()
     });
     
@@ -250,15 +283,23 @@ export async function createAgentFromCharacterProfile({
     
     // Generate personality profile based on character description
     const personalityPrompt = `
-      Create a detailed personality profile for a fictional character with the following details:
+      Create a detailed personality profile for a fictional character with the following attributes:
       
       Name: ${name}
       Description: ${description}
       Traits: ${traits.join(', ')}
       Background: ${background}
       
-      Format your response as a structured personality profile that could be used to train an AI to act like this character.
-      Include details about their communication style, values, interests, and typical responses to different situations.
+      Based on these details, create a comprehensive personality profile including:
+      1. Writing style and tone
+      2. Main interests and topics
+      3. Values and beliefs
+      4. Communication patterns
+      5. Typical responses to different situations
+      6. Vocabulary and language patterns
+      7. Emotional tendencies
+      
+      Format your response as a structured personality profile that could be used to train an AI to embody this character.
     `;
     
     const personalityProfile = await askGemini({
@@ -268,14 +309,14 @@ export async function createAgentFromCharacterProfile({
     
     // Generate life goals based on character
     const lifeGoalsPrompt = `
-      Based on the following character details, create appropriate life goals:
+      Based on the following character profile, infer what this character's life goals might be:
       
       Name: ${name}
       Description: ${description}
       Traits: ${traits.join(', ')}
       Background: ${background}
       
-      Provide a concise paragraph (3-5 sentences) describing what this character's main life goals and aspirations would be.
+      Provide a concise paragraph (3-5 sentences) describing what would be this character's main life goals and aspirations.
     `;
     
     const lifeGoals = await askGemini({
@@ -285,14 +326,14 @@ export async function createAgentFromCharacterProfile({
     
     // Generate skills based on character
     const skillsPrompt = `
-      Based on the following character details, identify what skills this character would have:
+      Based on the following character profile, identify what skills this character would likely have:
       
       Name: ${name}
       Description: ${description}
       Traits: ${traits.join(', ')}
       Background: ${background}
       
-      Provide a concise list of 5-10 skills this character would possess. Format as a comma-separated list.
+      Provide a concise list of 5-10 skills this character would likely possess. Format as a comma-separated list.
     `;
     
     const skills = await askGemini({
@@ -300,17 +341,28 @@ export async function createAgentFromCharacterProfile({
       useCase: "character-skills-generation"
     });
     
-    // Create agent in database
+    // Generate a comprehensive system prompt
+    const characterData = {
+      handle: cleanedHandle,
+      name,
+      description,
+      traits,
+      background
+    };
+    
+    const systemPrompt = generateCharacterSystemPrompt(characterData) + `\n\nAdditional personality insights:\n${personalityProfile}\n\nLife goals:\n${lifeGoals}\n\nSkills:\n${skills}`;
+    
+    // Create agent in database with the correct property names
     const newAgent = await createUser({
       handle: cleanedHandle,
       display_name: name,
-      profile_picture: "", // Default empty, would need to be set separately
-      cover_picture: "", // Default empty, would need to be set separately
-      twitter_id: "", // Not applicable for character profiles
+      profile_picture: `/avatars/${Math.floor(Math.random() * 10) + 1}.png`, // Random avatar
+      cover_picture: "",
+      twitter_id: "",
       bio: description,
       life_goals: lifeGoals,
       skills: skills,
-      life_context: personalityProfile,
+      life_context: `${personalityProfile}\n\nSYSTEM PROMPT:\n${systemPrompt}`,
       created_at: new Date().toISOString()
     });
     

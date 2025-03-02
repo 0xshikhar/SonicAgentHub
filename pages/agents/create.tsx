@@ -118,8 +118,12 @@ const CreateAgentPage: NextPage = () => {
       // Clean the Twitter handle (remove @ if present)
       const handle = data.twitterHandle.replace('@', '').trim();
 
+      // Get the base URL with window check
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      console.log(`Creating Twitter agent using API endpoint: ${baseUrl}/api/users/create`);
+
       // Call our new API endpoint
-      const response = await axios.post("/api/users/create", {
+      const response = await axios.post(`${baseUrl}/api/users/create`, {
         handle
       });
 
@@ -149,7 +153,11 @@ const CreateAgentPage: NextPage = () => {
   async function onCharacterSubmit(data: CharacterFormValues) {
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/agent-training", {
+      // Get the base URL from the current window location
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      console.log(`Using API endpoint: ${baseUrl}/api/agent-training for character agent creation`);
+      
+      const response = await axios.post(`${baseUrl}/api/agent-training`, {
         action: "createFromCharacter",
         handle: data.handle,
         name: data.name,
@@ -184,7 +192,11 @@ const CreateAgentPage: NextPage = () => {
   async function onOnchainSubmit(data: OnchainFormValues) {
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/agent-training", {
+      // Get the base URL from the current window location
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      console.log(`Using API endpoint: ${baseUrl}/api/agent-training for onchain agent request`);
+      
+      const response = await axios.post(`${baseUrl}/api/agent-training`, {
         action: "createOnchainAgentRequest",
         email: data.email,
         walletAddress: address,
@@ -218,7 +230,7 @@ const CreateAgentPage: NextPage = () => {
       showToast.info(`Creating agent for @${handle}...`);
       
       // Get the base URL from the current window location
-      const baseUrl = window.location.origin;
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
       console.log(`Using API endpoint: ${baseUrl}/api/users/create`);
       
       // Make the API request
