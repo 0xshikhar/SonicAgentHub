@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { showToast } from "@/lib/toast";
 import { AgentNavigation } from "@/components/AgentNavigation"
+import { AdminAgentCreator } from "@/components/AdminAgentCreator"
 
 // Twitter profile form schema
 const twitterFormSchema = z.object({
@@ -701,6 +702,11 @@ const CreateAgentPage: NextPage = () => {
                   </Card>
                 </TabsContent>
               </Tabs>
+              
+              {/* Admin Agent Creator - Only visible to admin */}
+              <div className="mt-8">
+                <AdminAgentCreator />
+              </div>
             </div>
 
             <div className="md:col-span-1">

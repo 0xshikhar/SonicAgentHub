@@ -15,12 +15,15 @@ export function middleware(request: NextRequest) {
   if (protectedRoutes.some(route => path.startsWith(route))) {
     // Check if wallet is connected by looking for the wallet-connected cookie
     // This cookie will be set by the client-side Wagmi implementation
-    const isWalletConnected = request.cookies.get('wallet-connected');
+    const isWalletConnected = request.cookies.get('wallet-connected')?.value === 'true';
+    
+    console.log(`[Middleware] Checking protected route: ${path}, wallet connected: ${isWalletConnected}`);
     
     if (!isWalletConnected) {
       // Redirect to the home page with a query parameter to show toast
       const url = new URL('/', request.url);
       url.searchParams.set('auth', 'required');
+      console.log(`[Middleware] Redirecting to ${url.toString()} due to missing wallet connection`);
       return NextResponse.redirect(url);
     }
   }
@@ -37,7 +40,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
+     * - api routes (to allow API calls without authentication)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }; 

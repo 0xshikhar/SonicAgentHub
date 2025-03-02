@@ -58,13 +58,13 @@ export interface AgentReview {
     date: string;
 }
 
-export type FetchedTwitterUser = {
+export interface FetchedTwitterUser {
     id: number;
     id_str: string;
     name: string;
     screen_name: string;
     location: string;
-    url: string | null;
+    url: string;
     description: string;
     protected: boolean;
     verified: boolean;
@@ -76,11 +76,16 @@ export type FetchedTwitterUser = {
     created_at: string;
     profile_banner_url: string;
     profile_image_url_https: string;
+    default_profile?: boolean;
+    default_profile_image?: boolean;
+    withheld_in_countries?: string[];
+    withheld_scope?: string;
     can_dm: boolean;
-};
+}
 
-export type FetchedTweet = {
+export interface FetchedTweet {
     id: string;
+    id_str: string;
     user_handle: string;
     text: string;
     full_text: string;
@@ -89,7 +94,6 @@ export type FetchedTweet = {
     reply_count: number;
     retweet_count: number;
     quote_count: number;
-    id_str: string;
     user: {
         screen_name: string;
         profile_image_url_https: string;
@@ -106,7 +110,13 @@ export type FetchedTweet = {
     engagement_potential?: number;
     humor_or_sarcasm?: string;
     polarity_intensity?: number;
-};
+    hashtags?: string[];
+    urls?: string[];
+    media?: Array<{
+        type: string;
+        url: string;
+    }>;
+}
 
 export type ChatMessage = {
     role: "user" | "assistant";

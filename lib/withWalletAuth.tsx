@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useWalletAuth } from './hooks/useWalletAuth'
 import LoadingState from '../components/LoadingState'
+import { showToast } from '@/lib/toast'
 
 interface WithWalletAuthOptions {
   /**
@@ -24,20 +25,44 @@ export function withWalletAuth<P extends object>(
   const { redirectTo = '/' } = options
 
   function WithWalletAuthComponent(props: P) {
-    const { isAuthenticated, isLoading } = useWalletAuth({
+    const { isAuthenticated, isLoading, isProcessing, error, wallet } = useWalletAuth({
       requireAuth: true,
       redirectTo
     })
+    
+    const router = useRouter()
 
-    if (isLoading) {
+    useEffect(() => {
+      if (error) {
+        showToast.error(`Authentication error: ${error}`)
+      }
+    }, [error])
+
+    if (isLoading || isProcessing) {
       return <LoadingState />
     }
 
     if (!isAuthenticated) {
-      return null // Will redirect in the useWalletAuth hook
+      // Show a message before redirecting
+      showToast.error('Please connect your wallet to access this page')
+      
+      // Will redirect in the useWalletAuth hook
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
+          <p className="text-center mb-6">Please connect your wallet to access this page.</p>
+          <button 
+            onClick={() => router.push('/')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Go to Home Page
+          </button>
+        </div>
+      )
     }
 
-    return <Component {...props} />
+    // Pass the wallet to the component
+    return <Component {...props} wallet={wallet} />
   }
 
   // Set display name for debugging

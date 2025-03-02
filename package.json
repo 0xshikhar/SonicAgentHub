@@ -11,7 +11,10 @@
     "format": "bunx prettier --write \"{__tests__,components,pages,styles}/**/*.{ts,tsx,js,jsx}\"",
     "lint": "next lint && bunx prettier --check \"{__tests__,components,pages,styles}/**/*.{ts,tsx,js,jsx}\" && bun x tsc --noEmit",
     "clean": "rm -rf .next",
-    "type-check": "bun x tsc --noEmit"
+    "type-check": "bun x tsc --noEmit",
+    "test:admin-agent": "node scripts/test-admin-agent-creation.js",
+    "check:db": "node scripts/check-database-tables.js",
+    "populate:db": "node scripts/populate-test-data.js"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.1.8",
@@ -69,6 +72,7 @@
     "@tsconfig/node18": "^18.2.0",
     "@tsconfig/strictest": "^2.0.1",
     "@types/node": "^18",
+    "@types/node-fetch": "^2.6.12",
     "@types/react": "18.2.0",
     "autoprefixer": "^10.4.7",
     "dotenv-cli": "^6.0.0",

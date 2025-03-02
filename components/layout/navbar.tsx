@@ -9,6 +9,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit"
 import supabase from '@/lib/supabase'
 import { deleteCookie, setCookie } from 'cookies-next'
 import { showToast } from '@/lib/toast'
+import { getUserProfileByAddress } from '@/lib/user-utils'
 
 const navigation = [
     { name: 'Home', href: '/' },
@@ -20,6 +21,7 @@ export function Navbar() {
     const { address, isConnected } = useAccount()
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const [userHandle, setUserHandle] = useState<string | null>(null)
+    const [isLoadingUser, setIsLoadingUser] = useState(false)
 
     useEffect(() => {
         if (isConnected && address) {
@@ -28,18 +30,37 @@ export function Navbar() {
 
             // Fetch user handle from wallet address
             const fetchUserHandle = async () => {
+                setIsLoadingUser(true)
                 try {
-                    const { data } = await supabase
-                        .from('agent_chain_wallets')
-                        .select('handle')
-                        .eq('address', address)
-                        .single()
-
-                    if (data?.handle) {
-                        setUserHandle(data.handle)
+                    console.log(`Fetching user profile for address: ${address}`)
+                    
+                    // Try to get the user profile using the utility function
+                    const userProfile = await getUserProfileByAddress(address)
+                    
+                    if (userProfile?.handle) {
+                        console.log(`Found user profile with handle: ${userProfile.handle}`)
+                        setUserHandle(userProfile.handle)
+                    } else {
+                        // Fallback to direct query if the utility function doesn't work
+                        console.log('Falling back to direct wallet query')
+                        const { data } = await supabase
+                            .from('agent_chain_wallets')
+                            .select('handle')
+                            .eq('address', address)
+                        
+                        if (data && data.length > 0 && data[0]?.handle) {
+                            console.log(`Found wallet with handle: ${data[0]?.handle}`)
+                            setUserHandle(data[0]?.handle)
+                        } else {
+                            console.log('No user profile or wallet found for this address')
+                            setUserHandle(null)
+                        }
                     }
                 } catch (error) {
                     console.error('Error fetching user handle:', error)
+                    setUserHandle(null)
+                } finally {
+                    setIsLoadingUser(false)
                 }
             }
 
@@ -53,6 +74,11 @@ export function Navbar() {
     const navItems = [...navigation]
     if (isConnected && userHandle) {
         navItems.push({ name: 'Profile', href: `/profile/${userHandle}` })
+    }
+
+    // Add dashboard link if user is connected
+    if (isConnected) {
+        navItems.push({ name: 'Dashboard', href: '/dashboard' })
     }
 
     return (

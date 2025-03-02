@@ -103,7 +103,7 @@ export async function sendInitialFundsToWallet(address: string): Promise<boolean
         try {
             const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
             const deployerWallet = new ethers.Wallet(
-                process.env.DEPLOYER_PRIVATE_KEY!,
+                process.env.DEPLOYER_WALLET_PRIVATE_KEY!,
                 provider
             );
             const tokenContract = new ethers.Contract(

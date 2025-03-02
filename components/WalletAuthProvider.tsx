@@ -11,12 +11,14 @@ interface WalletAuthContextType {
   isProcessingUser: boolean
   userStored: boolean
   error: string | null
+  wallet: { address: string } | null
 }
 
 const WalletAuthContext = createContext<WalletAuthContextType>({
   isProcessingUser: false,
   userStored: false,
-  error: null
+  error: null,
+  wallet: null
 })
 
 // Hook to access the wallet auth context
@@ -33,6 +35,7 @@ export function WalletAuthProvider({ children }: WalletAuthProviderProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [userStored, setUserStored] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [wallet, setWallet] = useState<{ address: string } | null>(null)
 
   useEffect(() => {
     // Update the wallet connection state in the cookie
@@ -42,6 +45,8 @@ export function WalletAuthProvider({ children }: WalletAuthProviderProps) {
     if (!isConnected) {
       setUserStored(false)
       setError(null)
+      setWallet(null)
+      console.log('[WalletAuthProvider] Wallet disconnected, resetting state')
       return
     }
     
@@ -64,6 +69,7 @@ export function WalletAuthProvider({ children }: WalletAuthProviderProps) {
               console.log('[WalletAuthProvider] Successfully stored user via API call:', result.data)
               setUserStored(true)
               setError(null)
+              setWallet({ address })
               setIsProcessing(false)
               return
             }
@@ -78,16 +84,22 @@ export function WalletAuthProvider({ children }: WalletAuthProviderProps) {
           console.log('[WalletAuthProvider] Successfully stored user via direct call:', user)
           setUserStored(true)
           setError(null)
+          setWallet({ address })
         } catch (err) {
           console.error('[WalletAuthProvider] Failed to store user in database:', err)
           setError(err instanceof Error ? err.message : 'Unknown error storing user')
           setUserStored(false)
+          setWallet(null)
         } finally {
           setIsProcessing(false)
         }
       }
       
       storeUser()
+    } else if (isConnected && address && userStored) {
+      // If wallet is already connected and user is stored, update wallet state
+      setWallet({ address })
+      console.log(`[WalletAuthProvider] Wallet already connected with address: ${address}`)
     }
   }, [isConnected, address, isProcessing, userStored])
 
@@ -95,7 +107,8 @@ export function WalletAuthProvider({ children }: WalletAuthProviderProps) {
   const contextValue: WalletAuthContextType = {
     isProcessingUser: isProcessing,
     userStored,
-    error
+    error,
+    wallet
   }
 
   return (

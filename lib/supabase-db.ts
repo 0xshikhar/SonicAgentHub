@@ -567,12 +567,64 @@ export async function readIRLTweets({ handle }: { handle: string }): Promise<Sav
     }
 }
 
+export async function saveTwitterProfile(handle: string, profile: any): Promise<boolean> {
+    try {
+        handle = cleanHandle(handle)
+        console.log(`🔄 saveTwitterProfile: Starting to save Twitter profile for ${handle}`)
+        
+        // Use the appropriate Supabase client based on context
+        let supabase;
+        try {
+            console.log(`🔄 saveTwitterProfile: Attempting to create action Supabase client`)
+            supabase = await createActionSupabaseClient()
+            console.log(`✅ saveTwitterProfile: Successfully created action Supabase client`)
+        } catch (error) {
+            // If createActionSupabaseClient fails (e.g., in API routes), use the API client
+            console.log(`⚠️ saveTwitterProfile: Failed to create action client, falling back to API client`)
+            supabase = createApiSupabaseClient()
+            console.log(`✅ saveTwitterProfile: Successfully created API Supabase client`)
+        }
+        
+        // Store the complete Twitter profile in the extra_data field of an action event
+        console.log(`🔄 saveTwitterProfile: Storing Twitter profile data for ${handle} as an action event`)
+        
+        const { error } = await supabase
+            .from('agent_chain_action_events')
+            .insert({
+                top_level_type: 'individual',
+                action_type: 'twitter_profile_saved',
+                main_output: `Twitter profile data saved for @${handle}`,
+                from_handle: handle,
+                to_handle: null,
+                story_context: null,
+                extra_data: JSON.stringify({
+                    twitter_profile: profile,
+                    saved_at: new Date().toISOString()
+                }),
+                created_at: new Date().toISOString()
+            })
+            
+        if (error) {
+            console.error(`❌ saveTwitterProfile: Error saving Twitter profile data:`, error)
+            return false
+        }
+        
+        console.log(`✅ saveTwitterProfile: Successfully saved Twitter profile data for ${handle}`)
+        return true
+    } catch (error) {
+        console.error(`❌ saveTwitterProfile: Unexpected error:`, error)
+        return false
+    }
+}
+
 export async function saveIRLTweets({
     handle,
     tweets,
+    metadata = {}
 }: {
     handle: string;
     tweets: FetchedTweet[];
+    metadata?: Record<string, any>;
 }) {
     try {
         handle = cleanHandle(handle)
@@ -602,7 +654,8 @@ export async function saveIRLTweets({
             handle,
             content: tweet.full_text || tweet.text,
             posted_at: tweet.tweet_created_at,
-            // Additional fields can be stored in a metadata column if needed
+            // Store additional tweet data in the extra_data column
+            extra_data: JSON.stringify(tweet),
             created_at: new Date().toISOString()
         }))
         
@@ -615,6 +668,36 @@ export async function saveIRLTweets({
         if (error) {
             console.error(`❌ saveIRLTweets: Error inserting tweets for ${handle}:`, error)
             return false
+        }
+        
+        // Save metadata about this batch of tweets as an action event
+        if (Object.keys(metadata).length > 0) {
+            console.log(`🔄 saveIRLTweets: Saving tweet collection metadata for ${handle}`)
+            
+            const { error: metadataError } = await supabase
+                .from('agent_chain_action_events')
+                .insert({
+                    top_level_type: 'individual',
+                    action_type: 'tweets_collection_saved',
+                    main_output: `Saved ${tweets.length} tweets for @${handle}`,
+                    from_handle: handle,
+                    to_handle: null,
+                    story_context: null,
+                    extra_data: JSON.stringify({
+                        tweet_count: tweets.length,
+                        tweet_ids: tweets.map(t => t.id_str),
+                        collection_metadata: metadata,
+                        saved_at: new Date().toISOString()
+                    }),
+                    created_at: new Date().toISOString()
+                })
+                
+            if (metadataError) {
+                console.error(`⚠️ saveIRLTweets: Error saving tweet collection metadata:`, metadataError)
+                // Continue even if metadata saving fails
+            } else {
+                console.log(`✅ saveIRLTweets: Successfully saved tweet collection metadata for ${handle}`)
+            }
         }
         
         console.log(`✅ saveIRLTweets: Successfully saved ${tweets.length} tweets for ${handle}`)
