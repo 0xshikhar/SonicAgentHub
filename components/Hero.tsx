@@ -4,7 +4,7 @@ import Link from 'next/link';
 import HeroAnimation from '@/components/HeroAnimation'; // Import the animation component
 import AIAgentModel from '@/components/AIAgentModel'; // Import the 3D model component
 import { FeatureIcon } from '@/components/FeatureIcons';
-
+import FeatureHighlights from '@/components/FeatureHighlights';
 const HeroSection = () => {
     const router = useRouter();
 
@@ -44,7 +44,7 @@ const HeroSection = () => {
                                     <div className="flex items-center space-x-2">
                                         <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
                                         <div className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 font-medium">
-                                            Platform launching Q1 2025
+                                            Bridging AI & Blockchain
                                         </div>
                                     </div>
                                 </div>
@@ -57,14 +57,14 @@ const HeroSection = () => {
                                 The Future of <br />
                                 <span className="relative inline-block z-30">
                                     <span className="absolute -inset-1 bg-gradient-to-r from-blue-300 to-purple-300 blur opacity-30"></span>
-                                    <span className="relative bg-gradient-to-r from-blue-300 to-purple-300 text-transparent bg-clip-text">Autonomous AI</span>
+                                    <span className="relative bg-gradient-to-r from-blue-300 to-purple-300 text-transparent bg-clip-text">AI Agents On-Chain</span>
                                 </span>
                             </span>
                         </h1>
 
                         {/* Subheadline */}
                         <div className="text-gray-300 text-lg leading-relaxed max-w-xl">
-                            Discover, Identify, and manage AI agents that transform digital ownership and user experience in the crypto ecosystem.
+                            Create AI agents with their own on-chain identities and wallets. From Twitter profiles to custom characters, build autonomous agents that can chat, trade, and interact with the blockchain ecosystem.
                         </div>
 
                         {/* Statistics */}
@@ -91,7 +91,7 @@ const HeroSection = () => {
                             >
                                 <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-300 to-purple-300 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-200"></div>
                                 <div className="relative px-8 py-4 bg-[#0A0F1E] rounded-lg text-white font-medium group-hover:bg-[#131B31] transition duration-200 flex items-center justify-center">
-                                    <span>Add Your Agent</span>
+                                    <span>Create Your Agent</span>
                                     <svg className="w-5 h-5 ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M13.75 6.75L19.25 12L13.75 17.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                         <path d="M19 12H4.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -104,28 +104,26 @@ const HeroSection = () => {
                                 </Link>
                             </button>
                         </div>
-
                         {/* Trusted by section */}
                         <div className="pt-12">
                             <p className="text-gray-400 text-sm mb-6 font-medium tracking-wide">
-                                Supported Blockchains
+                                Powered by Aurora Blockchain
                             </p>
-                            {/* <div className="flex flex-wrap items-center gap-6">
-                                {chains.map((chain, index) => (
-                                    <div key={index} className="group relative transition-all duration-300 hover:scale-110">
-                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full blur-lg group-hover:blur-xl transition-all duration-300"></div>
-                                        <div className="relative h-12 w-12 bg-gray-900/80 rounded-full border border-gray-700/50 backdrop-blur-sm flex items-center justify-center shadow-lg hover:border-blue-500/50 transition-all duration-300">
-                                            <Image
-                                                src={chain.logo}
-                                                width={24}
-                                                height={24}
-                                                alt={chain.name}
-                                                className="opacity-90 group-hover:opacity-100"
-                                            />
+                            <div className="flex items-center space-x-4">
+                                <div className="group relative transition-all duration-300 hover:scale-110">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                                    <div className="relative h-12 w-12 bg-gray-900/80 rounded-full border border-gray-700/50 backdrop-blur-sm flex items-center justify-center shadow-lg hover:border-blue-500/50 transition-all duration-300">
+                                        {/* Aurora logo placeholder - replace with actual logo */}
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
+                                            <span className="text-white text-xs font-bold">Aurora</span>
                                         </div>
                                     </div>
-                                ))}
-                            </div> */}
+                                </div>
+                                <div className="text-gray-300 text-sm">
+                                    <p>Built on Aurora testnet for secure on-chain wallets and transactions</p>
+                                    <p className="text-gray-400 mt-1">Multi-chain support coming soon</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -258,6 +256,9 @@ const HeroSection = () => {
                     <path fill="#080D19" fillOpacity="1" d="M0,288L48,272C96,256,192,224,288,218.7C384,213,480,235,576,245.3C672,256,768,256,864,234.7C960,213,1056,171,1152,165.3C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
                 </svg>
             </div>
+
+            <FeatureHighlights />   
+
 
             {/* Features Section */}
             <div className="relative py-24">
@@ -481,9 +482,8 @@ const HeroSection = () => {
             </div>
 
             {/* Testimonials Section */}
-            <div className="relative py-24">
+            {/* <div className="relative py-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    {/* Section Header */}
                     <div className="text-center mb-20">
                         <h2 className="text-5xl font-bold mb-6">
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">
@@ -492,12 +492,9 @@ const HeroSection = () => {
                         </h2>
                     </div>
 
-                    {/* Testimonials Grid */}
                     <div className="relative overflow-hidden">
                         <div className="flex animate-testimonial">
-                            {/* First set of testimonials */}
                             <div className="flex gap-6 shrink-0">
-                                {/* Testimonial Card 1 */}
                                 <div className="w-[calc(33.333333%-1rem)] bg-[#0D1425] rounded-2xl p-8 relative group">
                                     <div className="absolute inset-0 bg-gradient-to-r from-blue-300/5 to-purple-300/5 rounded-2xl"></div>
                                     <div className="relative">
@@ -516,7 +513,6 @@ const HeroSection = () => {
                                     </div>
                                 </div>
 
-                                {/* Testimonial Card 2 */}
                                 <div className="w-[calc(33.333333%-1rem)] bg-[#0D1425] rounded-2xl p-8 relative group">
                                     <div className="absolute inset-0 bg-gradient-to-r from-blue-300/5 to-purple-300/5 rounded-2xl"></div>
                                     <div className="relative">
@@ -535,7 +531,6 @@ const HeroSection = () => {
                                     </div>
                                 </div>
 
-                                {/* Testimonial Card 3 */}
                                 <div className="w-[calc(33.333333%-1rem)] bg-[#0D1425] rounded-2xl p-8 relative group">
                                     <div className="absolute inset-0 bg-gradient-to-r from-blue-300/5 to-purple-300/5 rounded-2xl"></div>
                                     <div className="relative">
@@ -555,9 +550,7 @@ const HeroSection = () => {
                                 </div>
                             </div>
 
-                            {/* Second set of testimonials (duplicate for seamless loop) */}
                             <div className="flex gap-6 shrink-0">
-                                {/* Testimonial Card 4 */}
                                 <div className="w-[calc(33.333333%-1rem)] bg-[#0D1425] rounded-2xl p-8 relative group">
                                     <div className="absolute inset-0 bg-gradient-to-r from-blue-300/5 to-purple-300/5 rounded-2xl"></div>
                                     <div className="relative">
@@ -576,7 +569,6 @@ const HeroSection = () => {
                                     </div>
                                 </div>
 
-                                {/* Testimonial Card 5 */}
                                 <div className="w-[calc(33.333333%-1rem)] bg-[#0D1425] rounded-2xl p-8 relative group">
                                     <div className="absolute inset-0 bg-gradient-to-r from-blue-300/5 to-purple-300/5 rounded-2xl"></div>
                                     <div className="relative">
@@ -595,9 +587,8 @@ const HeroSection = () => {
                                     </div>
                                 </div>
 
-                                {/* Testimonial Card 1 (duplicate) */}
                                 <div className="w-[calc(33.333333%-1rem)] bg-[#0D1425] rounded-2xl p-8 relative group">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-blue-300 to-purple-300 rounded-2xl"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-blue-300/5 to-purple-300/5 rounded-2xl"></div>
                                     <div className="relative">
                                         <div className="text-gray-400 text-sm mb-8 leading-relaxed">
                                             Robots are not going to replace humans, they are going to make their jobs much more humane. Difficult, demeaning,
@@ -617,7 +608,7 @@ const HeroSection = () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 };

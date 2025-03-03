@@ -20,39 +20,39 @@ export const getTwitterUserInfo = async (twitterHandle: string): Promise<Fetched
         console.log("🐽 twitter user info url", url);
         // for now, just return a mock response - to avoid api costs
         console.log("its working");
-        
+
         // Return a consistent mock Twitter user with more detailed data
-        return {
-            id: 12345678,
-            id_str: "12345678",
-            name: `${twitterHandle.charAt(0).toUpperCase() + twitterHandle.slice(1)}`,
-            screen_name: twitterHandle,
-            location: "Internet",
-            url: `https://twitter.com/${twitterHandle}`,
-            description: `This is a mock profile for ${twitterHandle}`,
-            protected: false,
-            verified: Math.random() > 0.7, // Some users are verified
-            followers_count: Math.floor(10000 + Math.random() * 990000), // 10K to 1M followers
-            friends_count: Math.floor(500 + Math.random() * 4500), // 500 to 5K friends
-            listed_count: Math.floor(10 + Math.random() * 90), // 10 to 100 listed
-            favourites_count: Math.floor(1000 + Math.random() * 9000), // 1K to 10K favorites
-            statuses_count: Math.floor(5000 + Math.random() * 15000), // 5K to 20K statuses
-            created_at: new Date(2010 + Math.floor(Math.random() * 13), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)).toISOString(),
-            profile_banner_url: `https://picsum.photos/seed/${twitterHandle}/800/200`,
-            profile_image_url_https: `https://ui-avatars.com/api/?name=${twitterHandle}&background=random&size=200`,
-            default_profile: false,
-            default_profile_image: false,
-            withheld_in_countries: [],
-            withheld_scope: "",
-            can_dm: false,
-        };
-        
+        // return {
+        //     id: 12345678,
+        //     id_str: "12345678",
+        //     name: `${twitterHandle.charAt(0).toUpperCase() + twitterHandle.slice(1)}`,
+        //     screen_name: twitterHandle,
+        //     location: "Internet",
+        //     url: `https://twitter.com/${twitterHandle}`,
+        //     description: `This is a mock profile for ${twitterHandle}`,
+        //     protected: false,
+        //     verified: Math.random() > 0.7, // Some users are verified
+        //     followers_count: Math.floor(10000 + Math.random() * 990000), // 10K to 1M followers
+        //     friends_count: Math.floor(500 + Math.random() * 4500), // 500 to 5K friends
+        //     listed_count: Math.floor(10 + Math.random() * 90), // 10 to 100 listed
+        //     favourites_count: Math.floor(1000 + Math.random() * 9000), // 1K to 10K favorites
+        //     statuses_count: Math.floor(5000 + Math.random() * 15000), // 5K to 20K statuses
+        //     created_at: new Date(2010 + Math.floor(Math.random() * 13), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)).toISOString(),
+        //     profile_banner_url: `https://picsum.photos/seed/${twitterHandle}/800/200`,
+        //     profile_image_url_https: `https://ui-avatars.com/api/?name=${twitterHandle}&background=random&size=200`,
+        //     default_profile: false,
+        //     default_profile_image: false,
+        //     withheld_in_countries: [],
+        //     withheld_scope: "",
+        //     can_dm: false,
+        // };
+
         // In production, uncomment this:
-        // const response = await axios.get(url, { headers });
-        // console.log("🐽 twitter user info response.data", response.data);
-        // return response.data;
+        const response = await axios.get(url, { headers });
+        console.log("🐽 twitter user info response.data", response.data);
+        return response.data;
     } catch (error) {
-        await postErrorToDiscord(`🔴 Error fetching Twitter user info for: ${twitterHandle}`);
+        // await postErrorToDiscord(`🔴 Error fetching Twitter user info for: ${twitterHandle}`);
         console.error(`🔴 Error fetching Twitter user info:`, error);
         throw new Error(`Failed to fetch Twitter user info for ${twitterHandle}`);
     }
@@ -79,57 +79,113 @@ export const getTweetsFromUser = async (
         };
 
         // Generate consistent mock tweets with detailed metadata
-        const mockTweets: FetchedTweet[] = [];
-        
+        // const mockTweets: FetchedTweet[] = [];
+
         // Generate 10 mock tweets with consistent IDs based on handle
-        for (let i = 1; i <= 10; i++) {
-            const tweetDate = new Date();
-            tweetDate.setDate(tweetDate.getDate() - i); // Each tweet is a day older
-            
-            // Create a deterministic ID based on handle and index
-            const tweetId = `${userHandle}-tweet-${i}`;
-            
-            mockTweets.push({
-                id: tweetId,
+        // for (let i = 1; i <= 10; i++) {
+        //     const tweetDate = new Date();
+        //     tweetDate.setDate(tweetDate.getDate() - i); // Each tweet is a day older
+
+        //     // Create a deterministic ID based on handle and index
+        //     const tweetId = `${userHandle}-tweet-${i}`;
+
+        //     mockTweets.push({
+        //         id: tweetId,
+        //         user_handle: userHandle,
+        //         text: `This is mock tweet #${i} from ${userHandle}`,
+        //         full_text: `This is a longer version of mock tweet #${i} from ${userHandle}. #mockdata #testing #ai #blockchain`,
+        //         tweet_created_at: tweetDate.toISOString(),
+        //         favorite_count: Math.floor(Math.random() * 100),
+        //         reply_count: Math.floor(Math.random() * 20),
+        //         retweet_count: Math.floor(Math.random() * 50),
+        //         quote_count: Math.floor(Math.random() * 10),
+        //         id_str: tweetId,
+        //         user: {
+        //             screen_name: userHandle,
+        //             profile_image_url_https: `https://ui-avatars.com/api/?name=${userHandle}&background=random`,
+        //         },
+        //         user__screen_name: userHandle,
+        //         user__profile_image_url_https: `https://ui-avatars.com/api/?name=${userHandle}&background=random`,
+        //         sentiment: ["positive", "negative", "neutral"][Math.floor(Math.random() * 3)],
+        //         emotional_tone: ["happy", "sad", "angry", "excited"][Math.floor(Math.random() * 4)],
+        //         optimism_score: Math.random(),
+        //         toxicity_level: Math.random() * 0.3, // Keep toxicity low
+        //         subjectivity: Math.random(),
+        //         topic_categorization: ["tech", "politics", "entertainment", "sports"][Math.floor(Math.random() * 4)],
+        //         language_complexity: Math.random() * 10,
+        //         engagement_potential: Math.random(),
+        //         humor_or_sarcasm: Math.random() > 0.7 ? "humor" : "none",
+        //         polarity_intensity: Math.random(),
+        //         hashtags: ["mockdata", "testing", "ai", "blockchain"],
+        //         urls: [`https://example.com/${userHandle}/tweet/${i}`],
+        //         media: i % 3 === 0 ? [{
+        //             type: "photo",
+        //             url: `https://picsum.photos/seed/${userHandle}-${i}/400/300`
+        //         }] : [],
+        //     });
+        // }
+
+        let allTweets = [] as FetchedTweet[];
+        let cursor: string | null = null;
+        let callCount = 0;
+
+        do {
+            const url: string = cursor
+                ? `${baseUrl}&cursor=${encodeURIComponent(cursor)}`
+                : baseUrl;
+
+            try {
+                const response: AxiosResponse<ApiResponse> = await axios.get(url, {
+                    headers,
+                });
+                callCount++;
+
+                console.log(
+                    " 🐽 reading tweets from user",
+                    userHandle,
+                    "call#" + callCount
+                );
+
+                if (response.data.tweets && Array.isArray(response.data.tweets)) {
+                    allTweets = allTweets.concat(response.data.tweets);
+                }
+                cursor = response.data.next_cursor || null;
+            } catch (error) {
+                console.error(`Error in call ${callCount}:`, error);
+                break;
+
+            }
+        } while (
+            (cursor !== null || callCount < MAX_TWEET_API_CALL_COUNT) &&
+            allTweets.length < MAX_PUBLICATIONS_WHEN_PARSING_PROFILE
+        );
+
+        const allTweetsRaw = allTweets.map((tweet) => {
+            const objectFiltered = {
+                tweet_created_at: tweet.tweet_created_at,
+                id: tweet.id,
+                full_text: tweet.full_text,
+                favorite_count: tweet.favorite_count,
                 user_handle: userHandle,
-                text: `This is mock tweet #${i} from ${userHandle}`,
-                full_text: `This is a longer version of mock tweet #${i} from ${userHandle}. #mockdata #testing #ai #blockchain`,
-                tweet_created_at: tweetDate.toISOString(),
-                favorite_count: Math.floor(Math.random() * 100),
-                reply_count: Math.floor(Math.random() * 20),
-                retweet_count: Math.floor(Math.random() * 50),
-                quote_count: Math.floor(Math.random() * 10),
-                id_str: tweetId,
+                reply_count: tweet.reply_count,
+                retweet_count: tweet.retweet_count,
+                quote_count: tweet.quote_count,
+                id_str: tweet.id_str,
                 user: {
-                    screen_name: userHandle,
-                    profile_image_url_https: `https://ui-avatars.com/api/?name=${userHandle}&background=random`,
+                    screen_name: tweet.user.screen_name,
+                    profile_image_url_https: tweet.user.profile_image_url_https.replace(
+                        "_normal",
+                        "_400x400"
+                    ),
                 },
-                user__screen_name: userHandle,
-                user__profile_image_url_https: `https://ui-avatars.com/api/?name=${userHandle}&background=random`,
-                sentiment: ["positive", "negative", "neutral"][Math.floor(Math.random() * 3)],
-                emotional_tone: ["happy", "sad", "angry", "excited"][Math.floor(Math.random() * 4)],
-                optimism_score: Math.random(),
-                toxicity_level: Math.random() * 0.3, // Keep toxicity low
-                subjectivity: Math.random(),
-                topic_categorization: ["tech", "politics", "entertainment", "sports"][Math.floor(Math.random() * 4)],
-                language_complexity: Math.random() * 10,
-                engagement_potential: Math.random(),
-                humor_or_sarcasm: Math.random() > 0.7 ? "humor" : "none",
-                polarity_intensity: Math.random(),
-                hashtags: ["mockdata", "testing", "ai", "blockchain"],
-                urls: [`https://example.com/${userHandle}/tweet/${i}`],
-                media: i % 3 === 0 ? [{
-                    type: "photo",
-                    url: `https://picsum.photos/seed/${userHandle}-${i}/400/300`
-                }] : [],
-            });
-        }
+            } as FetchedTweet;
+            return objectFiltered;
+        });
 
-        console.log(` 🐽 Generated ${mockTweets.length} mock tweets for ${userHandle}`);
 
-        return { allTweets: mockTweets };
+        return { allTweets: allTweetsRaw };
     } catch (error) {
-        await postErrorToDiscord("🔴 Error in getTweetsFromUser: " + userHandle);
+        // await postErrorToDiscord("🔴 Error in getTweetsFromUser: " + userHandle);
         console.error("🔴 Error in getTweetsFromUser:", error);
         return null;
     }
@@ -143,8 +199,8 @@ export const searchTweets = async (topic: string) => {
     };
     // for now, just return a mock response - to avoid api costs
     console.log("its working");
-    // const response = await axios.get(url, { headers });
-    // return response.data;
+    const response = await axios.get(url, { headers });
+    return response.data;
 };
 
 /**
@@ -299,3 +355,4 @@ export const createAgentTrainingDataset = async (userHandle: string) => {
         return null;
     }
 };
+

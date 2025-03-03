@@ -34,17 +34,12 @@ export function Navbar() {
     // Add profile link to navigation if user has an agent
     const navItems = [...navigation]
     
-    if (isConnected && wallet?.hasAgent && wallet?.agentHandle) {
-        navItems.push({ name: 'Profile', href: `/profile/${wallet.agentHandle}` })
-    } else if (isConnected) {
-        // If user is connected but doesn't have an agent, add a link to create one
-        navItems.push({ name: 'Create Agent', href: '/create-agent' })
-    }
-
-    // Add dashboard link if user is connected
-    if (isConnected) {
-        navItems.push({ name: 'Dashboard', href: '/dashboard' })
-    }
+    // if (isConnected && wallet?.hasAgent && wallet?.agentHandle) {
+    //     navItems.push({ name: 'Profile', href: `/profile/${wallet.agentHandle}` })
+    // } else if (isConnected) {
+    //     // If user is connected but doesn't have an agent, add a link to create one
+    //     navItems.push({ name: 'Create Agent', href: '/create-agent' })
+    // }
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-black border-b border-white/5">

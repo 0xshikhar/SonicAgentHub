@@ -133,34 +133,27 @@ const AgentCard: React.FC<{
     );
 };
 
-// Dashboard Component
+// Dashboard component
 const Dashboard: React.FC<{
     agents: Agent[];
     navigateTo: (tab: 'dashboard' | 'create-agent' | 'chat', agentId?: string | null) => void;
     setAgents: React.Dispatch<React.SetStateAction<Agent[]>>;
 }> = ({ agents, navigateTo, setAgents }) => {
-    const deleteAgent = (id: string) => {
-        if (window.confirm('Are you sure you want to delete this agent?')) {
-            // In production: Call API to delete agent
-            setAgents(agents.filter(agent => agent.id !== id));
-        }
-    };
-
     return (
         <div>
-            <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Your Agents</h2>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Your Agents</h1>
                 <button
                     onClick={() => navigateTo('create-agent')}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition duration-200 flex items-center"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition duration-200"
                 >
-                    <span className="mr-2">+</span> Create New Agent
+                    Create New Agent
                 </button>
             </div>
 
             {agents.length === 0 ? (
-                <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
-                    <p className="text-gray-600 dark:text-gray-300 mb-4">You haven't created any agents yet.</p>
+                <div className="text-center py-12">
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">You don't have any agents yet.</p>
                     <button
                         onClick={() => navigateTo('create-agent')}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition duration-200"
@@ -175,7 +168,9 @@ const Dashboard: React.FC<{
                             key={agent.id}
                             agent={agent}
                             onChat={() => navigateTo('chat', agent.id)}
-                            onDelete={() => deleteAgent(agent.id)}
+                            onDelete={() => {
+                                setAgents(prev => prev.filter(a => a.id !== agent.id));
+                            }}
                         />
                     ))}
                 </div>
@@ -184,237 +179,120 @@ const Dashboard: React.FC<{
     );
 };
 
-// Create Agent Component
+// CreateAgent component
 const CreateAgent: React.FC<{
     navigateTo: (tab: 'dashboard' | 'create-agent' | 'chat') => void;
     setAgents: React.Dispatch<React.SetStateAction<Agent[]>>;
 }> = ({ navigateTo, setAgents }) => {
-    const [creationType, setCreationType] = useState<'twitter' | 'character'>('twitter');
-    const [twitterUsername, setTwitterUsername] = useState('');
-    const [agentName, setAgentName] = useState('');
-    const [agentDescription, setAgentDescription] = useState('');
-    const [characterFile, setCharacterFile] = useState<File | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [errors, setErrors] = useState<{ [key: string]: string }>({});
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [type, setType] = useState<'twitter' | 'character'>('twitter');
+    const [systemPrompt, setSystemPrompt] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const validateForm = () => {
-        const newErrors: { [key: string]: string } = {};
-
-        if (creationType === 'twitter' && !twitterUsername) {
-            newErrors.twitterUsername = 'Twitter username is required';
-        }
-
-        if (creationType === 'character' && !characterFile) {
-            newErrors.characterFile = 'Character file is required';
-        }
-
-        if (!agentName) {
-            newErrors.agentName = 'Agent name is required';
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files && event.target.files[0]) {
-            setCharacterFile(event.target.files[0]);
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!validateForm()) return;
-
-        setIsLoading(true);
-
-        try {
-            // Simulate API call with timeout
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            // Create new agent with mock data
-            const newAgent: Agent = {
-                id: Date.now().toString(),
-                name: agentName,
-                description: agentDescription || `Agent created from ${creationType === 'twitter' ? 'Twitter profile' : 'character file'}`,
-                type: creationType,
-                profileImage: 'https://placehold.co/100x100',
-                systemPrompt: creationType === 'twitter'
-                    ? `You are an agent based on the Twitter profile @${twitterUsername}. Respond in a concise, tweet-like manner.`
-                    : 'You are a custom character agent created from a character file.'
-            };
-
-            setAgents(prev => [...prev, newAgent]);
-            navigateTo('dashboard');
-        } catch (error) {
-            console.error('Error creating agent:', error);
-        } finally {
-            setIsLoading(false);
-        }
+        setIsSubmitting(true);
+        
+        // Create new agent
+        const newAgent: Agent = {
+            id: Date.now().toString(),
+            name,
+            description,
+            type,
+            profileImage: type === 'twitter' ? '/logos/twitter.png' : '/logos/custom-bot.jpg',
+            systemPrompt
+        };
+        
+        // Add to agents list
+        setAgents(prev => [...prev, newAgent]);
+        
+        // Navigate back to dashboard
+        navigateTo('dashboard');
     };
-
+    
     return (
-        <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow p-8">
-            <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Create New Agent</h2>
-                <p className="text-gray-600 dark:text-gray-300">
-                    Choose between creating an agent from a Twitter profile or a character file.
-                </p>
+        <div>
+            <div className="flex items-center mb-6">
+                <button
+                    onClick={() => navigateTo('dashboard')}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mr-4"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                </button>
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Create New Agent</h1>
             </div>
-
-            <form onSubmit={handleSubmit}>
-                <div className="mb-6">
-                    <label className="text-gray-700 dark:text-gray-300 font-medium mb-2 block">
-                        Agent Type
-                    </label>
+            
+            <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Agent Type</label>
                     <div className="flex space-x-4">
-                        <button
-                            type="button"
-                            className={`px-4 py-2 rounded-md transition-colors duration-200 ${creationType === 'twitter'
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                                }`}
-                            onClick={() => setCreationType('twitter')}
-                        >
-                            Twitter Profile
-                        </button>
-                        <button
-                            type="button"
-                            className={`px-4 py-2 rounded-md transition-colors duration-200 ${creationType === 'character'
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                                }`}
-                            onClick={() => setCreationType('character')}
-                        >
-                            Character File
-                        </button>
+                        <label className="flex items-center">
+                            <input
+                                type="radio"
+                                checked={type === 'twitter'}
+                                onChange={() => setType('twitter')}
+                                className="h-4 w-4 text-indigo-600"
+                            />
+                            <span className="ml-2 text-gray-700 dark:text-gray-300">Twitter Profile</span>
+                        </label>
+                        <label className="flex items-center">
+                            <input
+                                type="radio"
+                                checked={type === 'character'}
+                                onChange={() => setType('character')}
+                                className="h-4 w-4 text-indigo-600"
+                            />
+                            <span className="ml-2 text-gray-700 dark:text-gray-300">Custom Character</span>
+                        </label>
                     </div>
                 </div>
-
-                {creationType === 'twitter' ? (
-                    <div className="mb-6">
-                        <label htmlFor="twitterUsername" className="text-gray-700 dark:text-gray-300 font-medium mb-2 block">
-                            Twitter Username
-                        </label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">@</span>
-                            <input
-                                type="text"
-                                id="twitterUsername"
-                                value={twitterUsername}
-                                onChange={(e) => setTwitterUsername(e.target.value)}
-                                className={`w-full px-8 py-3 rounded-md border ${errors.twitterUsername ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                                    } bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500`}
-                                placeholder="username"
-                            />
-                        </div>
-                        {errors.twitterUsername && (
-                            <p className="text-red-500 text-sm mt-1">{errors.twitterUsername}</p>
-                        )}
-                        <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
-                            We'll analyze this Twitter profile to create an agent that mimics its style and personality.
-                        </p>
-                    </div>
-                ) : (
-                    <div className="mb-6">
-                        <label className="text-gray-700 dark:text-gray-300 font-medium mb-2 block">
-                            Character File
-                        </label>
-                        <div
-                            className={`border-2 border-dashed ${errors.characterFile ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                                } rounded-md px-6 py-10 text-center cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors duration-200`}
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
-                                className="hidden"
-                                accept=".json,.txt,.md"
-                            />
-                            {characterFile ? (
-                                <div>
-                                    <p className="text-indigo-600 dark:text-indigo-400 font-medium">
-                                        {characterFile.name}
-                                    </p>
-                                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                                        {Math.round(characterFile.size / 1024)} KB · Click to change
-                                    </p>
-                                </div>
-                            ) : (
-                                <div>
-                                    <p className="text-gray-600 dark:text-gray-300">
-                                        Drag and drop your character file here, or click to browse
-                                    </p>
-                                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                                        Supports JSON, TXT, or MD files
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                        {errors.characterFile && (
-                            <p className="text-red-500 text-sm mt-1">{errors.characterFile}</p>
-                        )}
-                    </div>
-                )}
-
-                <div className="mb-6">
-                    <label htmlFor="agentName" className="text-gray-700 dark:text-gray-300 font-medium mb-2 block">
-                        Agent Name
-                    </label>
+                
+                <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
                     <input
                         type="text"
-                        id="agentName"
-                        value={agentName}
-                        onChange={(e) => setAgentName(e.target.value)}
-                        className={`w-full px-4 py-3 rounded-md border ${errors.agentName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                            } bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500`}
-                        placeholder="Give your agent a name"
+                        id="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                        required
                     />
-                    {errors.agentName && (
-                        <p className="text-red-500 text-sm mt-1">{errors.agentName}</p>
-                    )}
                 </div>
-
-                <div className="mb-8">
-                    <label htmlFor="agentDescription" className="text-gray-700 dark:text-gray-300 font-medium mb-2 block">
-                        Description (Optional)
-                    </label>
+                
+                <div>
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                    <input
+                        type="text"
+                        id="description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                        required
+                    />
+                </div>
+                
+                <div>
+                    <label htmlFor="systemPrompt" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">System Prompt</label>
                     <textarea
-                        id="agentDescription"
-                        value={agentDescription}
-                        onChange={(e) => setAgentDescription(e.target.value)}
-                        className="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[100px]"
-                        placeholder="Describe your agent's personality or purpose"
+                        id="systemPrompt"
+                        value={systemPrompt}
+                        onChange={(e) => setSystemPrompt(e.target.value)}
+                        rows={4}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="Instructions for how the agent should behave..."
                     />
                 </div>
-
-                <div className="flex justify-between">
-                    <button
-                        type="button"
-                        onClick={() => navigateTo('dashboard')}
-                        className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-200"
-                    >
-                        Cancel
-                    </button>
+                
+                <div>
                     <button
                         type="submit"
-                        disabled={isLoading}
-                        className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center"
+                        disabled={isSubmitting || !name || !description}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-md transition duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {isLoading ? (
-                            <>
-                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Creating...
-                            </>
-                        ) : (
-                            'Create Agent'
-                        )}
+                        {isSubmitting ? 'Creating...' : 'Create Agent'}
                     </button>
                 </div>
             </form>
@@ -433,7 +311,7 @@ const ChatWithAgent: React.FC<{
     const [chatMessages, setChatMessages] = useState<Array<{ id: string; role: 'user' | 'assistant' | 'system'; content: string }>>([
         {
             id: '1',
-            role: 'system',
+            role: 'assistant',
             content: agent.systemPrompt || `You are ${agent.name}, a conversational AI agent.`,
         }
     ]);
