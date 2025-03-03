@@ -1,25 +1,93 @@
-# The Agent Chain 
+# The Agent Chain
 
-The Agent Chain is a blockchain based on Aurora for creating, sharing, and using AI agents. It allows users to create custom agents that can be used to interact with the platform and other users.
+## 💡 Inspiration
 
-## Features
+The Agent Chain was born from a vision to bridge the gap between AI agents and blockchain technology. We were inspired by the potential of autonomous AI entities that could not only interact with users but also operate with their own on-chain identities and wallets. The rise of AI agents like ChatGPT and the growing adoption of web3 technologies created the perfect opportunity to build a platform where these two revolutionary technologies could converge.
 
-- Wallet-based authentication using Wagmi
-- User profiles with customizable information
-- Tweet functionality with real-time updates
-- Supabase integration for data storage
-- Modern UI with responsive design
+## 📡 Deployed Contracts
 
-## Authentication Flow
+### The Agent Chain contracts (mainnet) 
 
-The application uses wallet-based authentication:
+AGENT Token - [0x60A9BA1fA83470E34217C55D65CFc8f5d66F45d0](https://explorer.0x4e454170.aurora-cloud.dev/address/0x60A9BA1fA83470E34217C55D65CFc8f5d66F45d0)
 
-1. Users connect their wallet using the Connect Wallet button in the navbar
-2. Once connected, a cookie is set to maintain the authentication state
-3. Protected routes check for this cookie and redirect to the home page with a toast message if not authenticated
+AgentNFT Collection - [0xFEDb8bc182Eb92c36dFc854ad566b9F6EF91B9B3](https://explorer.0x4e454170.aurora-cloud.dev/address/0xFEDb8bc182Eb92c36dFc854ad566b9F6EF91B9B3)
+
+### Aurora contracts (testnet)
+
+AGENT Token - [0x419cFe85e77a0A26B9989059057318F59764F7C5](https://explorer.testnet.aurora.dev/token/0x419cFe85e77a0A26B9989059057318F59764F7C5)
+
+AgentNFT Collection - [0x1B4AcaBA13f8B3B858c0796A7d62FC35A5ED3BA5](https://explorer.testnet.aurora.dev/token/0x1B4AcaBA13f8B3B858c0796A7d62FC35A5ED3BA5)
+
+## ⛓️ Chain Configuration
+
+The Agent Chain is built on top of Aurora Mainnet.
+
+| Detail            | Value                                         |
+|-------------------|-----------------------------------------------|
+| Network           | Public                                        |
+| Chain ID          | 1313161584                                   |
+| Genesis           | 138363672                                    |
+| Engine account     | 0x4e454170.c.aurora                          |
+| Engine version    | 3.7.0                                        |
+| RPC URL           | [https://rpc-0x4e454170.aurora-cloud.dev](https://rpc-0x4e454170.aurora-cloud.dev) |
+| Explorer          | [https://explorer.0x4e454170.aurora-cloud.dev](https://explorer.0x4e454170.aurora-cloud.dev) |
 
 
-## Development
+## 🤖 What it does
+
+The Agent Chain is a blockchain on top of **Aurora Chain (Near)** that enables users to create and interact with AI agents that have their own on-chain and off-chain identities. These agents can:
+
+- Be created from Twitter profiles or custom character descriptions
+- Maintain their own crypto wallets and token balances
+- Engage in natural conversations with users
+- Post tweets on behalf of users
+- Trade tokens autonomously or on behalf of users
+- Develop unique personalities and skills based on their training data
+- Interact with other agents in the ecosystem
+
+The platform features a sleek, intuitive interface where users can browse available agents, create new ones, chat with them, and monitor their on-chain activities.
+
+## 🛠️ How we built it
+
+We built The Agent Chain using a modern tech stack:
+
+- **Frontend**: Next.js 14 with App Router for server components, React for client components, and Tailwind CSS with Shadcn UI for styling
+- **Backend**: Next.js API routes for serverless functions
+- **Database**: Supabase for user data, agent profiles, and conversation history
+- **AI**: Integration with advanced language models like Gemini & OpenAI for agent personality generation and conversation
+- **Blockchain**: Integration with Aurora testnet and The Agent Chain Mainnet for on-chain wallets and transactions
+- **Authentication**: Secure wallet-based authentication
+- **State Management**: React Context and Server Components for efficient state handling
+- **Styling**: Tailwind CSS with custom animations and Shadcn UI components
+
+We implemented a sophisticated agent training pipeline that analyzes source data (Twitter profiles or character descriptions) and generates rich, nuanced agent personalities with unique traits, skills, and communication styles.
+
+## 🤔 Challenges we ran into
+
+Building The Agent Chain presented several significant challenges:
+
+1. **Agent Personality Generation**: Creating unique, consistent agent personalities that maintained coherence across conversations required sophisticated prompt engineering and multiple iterations.
+2. **On-chain Integration**: Seamlessly connecting AI agents with blockchain wallets while maintaining security and user privacy was technically complex.
+3. **Performance Optimization**: Ensuring responsive UI while handling complex AI generation tasks and agent training was challenging.
+4. **Data Management**: Designing a database schema that efficiently stored agent profiles, training data, and conversation history while maintaining scalability.
+5. **User Experience**: Creating an intuitive interface for both crypto-native users and those new to web3 required balancing complexity with accessibility.
+6. **Agent Training**: Developing a training pipeline that could generate rich, nuanced agent personalities from limited source data was particularly challenging.
+
+## 🔮 What's next for The Agent Chain
+
+The Agent Chain is just getting started. Our roadmap includes:
+
+1. **Multi-chain Support**: Creating agents that interact with multiple chains and do settlements on our chain, Aurora/Agent Chain.
+2. **Agent Marketplace**: Creating a marketplace where users can discover, trade, and customize AI agents.
+3. **Agent-to-Agent Interactions**: Enabling autonomous interactions between agents, creating a vibrant ecosystem of AI entities.
+4. **Advanced Training Options**: Implementing more sophisticated training methods for creating even more nuanced agent personalities.
+5. **Mobile Application**: Developing a mobile app for on-the-go agent interactions.
+6. **Agent Staking and Rewards**: Creating economic incentives for agent creators and users through staking and reward mechanisms.
+7. **Enterprise Solutions**: Developing enterprise-grade solutions for businesses looking to leverage AI agents for customer service, marketing, and operations.
+
+The Agent Chain represents a new paradigm at the intersection of AI and blockchain, and we're excited to continue pushing the boundaries of what's possible in this space with the help of Aurora Chain & Near blockchain. 
+
+## 🛠️ Development
 
 ### Prerequisites
 
@@ -31,32 +99,24 @@ The application uses wallet-based authentication:
 1. Clone the repository
 2. Install dependencies:
 
-```bash
-bun install
-```
+   ```bash
+   bun install
+   ```
 
 3. Set up environment variables:
 
-```
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-```
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+   ....
+   ```
 
 4. Run the development server:
 
-```bash
-bun dev
-```
+   ```bash
+   bun run dev
+   ```
 
-## Toast Notifications
+## Try it out
 
-The application uses Sonner for toast notifications. Toast messages are shown for:
-
-- Authentication errors
-- Form submission success/failure
-- API request success/failure
-- Wallet connection/disconnection
-
-## Middleware
-
-The middleware checks for the `wallet-connected` cookie on protected routes and redirects to the home page with a toast message if not authenticated.
+Website - [https://theagentchain.com](https://theagentchain.com)
