@@ -5,7 +5,7 @@ interface LoadingStateProps {
 
 export default function LoadingState({ 
     variant = 'fullscreen',
-    text = 'Connecting to wallet...'
+    text = 'Loading...'
 }: LoadingStateProps) {
     if (variant === 'inline') {
         return (

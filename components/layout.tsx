@@ -24,13 +24,13 @@ export default function Layout({ children }: LayoutProps) {
                 <div className="relative w-10 h-10 mr-3">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg blur opacity-50"></div>
                   <div className="relative bg-[#0A0F1E] rounded-lg p-2">
-                    <Image src="/logo.svg" alt="Agent Market" width={24} height={24} />
+                    <Image src="/logo.svg" alt="Agent chain" width={24} height={24} />
                   </div>
                 </div>
-                <span className="text-white text-lg font-semibold">Agent Market</span>
+                <span className="text-white text-lg font-semibold">Agent chain</span>
               </div>
               <div className="text-gray-400 text-sm leading-relaxed">
-                The AI-Powered Autonomous Agent Platform. Empowering digital transformation with autonomous Agent Markets.
+                The AI-Powered Autonomous Agent Platform. Empowering digital transformation with autonomous Agent chains.
               </div>
             </div>
 
@@ -58,7 +58,7 @@ export default function Layout({ children }: LayoutProps) {
           {/* Bottom Bar */}
           <div className="border-t border-white/5 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
             <div className="text-gray-400 text-sm mb-4 md:mb-0">
-              © {new Date().getFullYear()} Agent Market. All rights reserved.
+              © {new Date().getFullYear()} Agent chain. All rights reserved.
             </div>
             <div className="flex space-x-6">
               <Link href="#" className="text-gray-400 hover:text-white text-sm">Privacy Policy</Link>

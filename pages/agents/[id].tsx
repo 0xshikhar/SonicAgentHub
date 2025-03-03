@@ -9,6 +9,7 @@ import { ChatMessage } from '@/components/ChatMessage'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { agents as staticAgents } from '@/lib/constants'
+import { AuthCheck } from '@/components/AuthCheck'
 
 interface Message {
     id: string
@@ -85,13 +86,21 @@ export default function AgentDetailPage() {
                 });
 
                 if (response.data.success) {
-                    setAgent(response.data.data)
+                    const agentData = response.data.data;
+                    
+                    // Redirect to onchain agent page if it's an onchain agent
+                    if (agentData.source === 'agent_chain_users') {
+                        router.push(`/agents/onchain/${agentData.handle || id}`);
+                        return;
+                    }
+                    
+                    setAgent(agentData)
                     // Add system welcome message
                     setMessages([
                         {
                             id: 'welcome',
                             role: 'assistant',
-                            content: `Hi there! I'm ${response.data.data.name}. How can I assist you today?`,
+                            content: `Hi there! I'm ${agentData.name}. How can I assist you today?`,
                             timestamp: new Date()
                         }
                     ])
@@ -107,7 +116,7 @@ export default function AgentDetailPage() {
         }
 
         fetchAgentDetails()
-    }, [id])
+    }, [id, router])
 
     // Scroll to bottom of messages
     useEffect(() => {
@@ -235,301 +244,303 @@ export default function AgentDetailPage() {
     const badge = getAgentBadge(agent)
 
     return (
-        <div className="min-h-screen bg-[#0A0E1A]">
-            {/* Agent Profile Header */}
-            <div className="relative">
-                {/* Background Gradient */}
-                <div className="absolute inset-0 bg-gradient-to-b from-blue-600/10 via-purple-600/5 to-transparent"></div>
+        <AuthCheck>
+            <div className="min-h-screen bg-[#0A0E1A]">
+                {/* Agent Profile Header */}
+                <div className="relative">
+                    {/* Background Gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-blue-600/10 via-purple-600/5 to-transparent"></div>
 
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="flex flex-col md:flex-row gap-8">
-                        {/* Agent Avatar and Stats */}
-                        <div className="flex flex-col items-center md:items-start">
-                            {/* Avatar with Glow Effect */}
-                            <div className="relative group">
-                                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full opacity-75 blur-sm group-hover:opacity-100 transition duration-300"></div>
-                                <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-white/10">
-                                    <Image
-                                        src={agent.imageUrl || '/logos/aiagent-bg.png'}
-                                        alt={agent.name}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Source Badge */}
-                            <div className="mt-4 px-3 py-1.5 rounded-full text-xs font-medium bg-black/30 backdrop-blur-md border border-white/10">
-                                <span className={`flex items-center ${badge.textColor}`}>
-                                    <span className={`w-1.5 h-1.5 ${badge.bgColor} rounded-full mr-1.5`}></span>
-                                    {badge.text}
-                                </span>
-                            </div>
-
-                            {/* Agent Name and Score */}
-                            <div className="mt-4 text-center md:text-left">
-                                <h1 className="text-3xl font-bold text-white">{agent.name}</h1>
-                                <div className="flex items-center mt-2 justify-center md:justify-start">
-                                    <div className="flex items-center text-yellow-400">
-                                        <span className="text-lg mr-1">⭐</span>
-                                        <span className="text-lg font-medium">{agent.score}</span>
-                                    </div>
-                                    <span className="mx-2 text-gray-500">•</span>
-                                    <span className="text-gray-400">v{agent.version}</span>
-                                    {agent.twitter && (
-                                        <>
-                                            <span className="mx-2 text-gray-500">•</span>
-                                            <a 
-                                                href={`https://twitter.com/${agent.twitter.replace('@', '')}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-purple-400 hover:text-purple-300 transition-colors"
-                                            >
-                                                {agent.twitter}
-                                            </a>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Agent Stats */}
-                            <div className="grid grid-cols-3 gap-4 mt-6 w-full max-w-xs">
-                                <div className="bg-[#131B31] rounded-xl p-3 text-center backdrop-blur-sm">
-                                    <div className="text-sm text-gray-400">Users</div>
-                                    <div className="text-white font-medium mt-1">
-                                        {agent.stats?.users?.toLocaleString() || '0'}
+                    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <div className="flex flex-col md:flex-row gap-8">
+                            {/* Agent Avatar and Stats */}
+                            <div className="flex flex-col items-center md:items-start">
+                                {/* Avatar with Glow Effect */}
+                                <div className="relative group">
+                                    <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full opacity-75 blur-sm group-hover:opacity-100 transition duration-300"></div>
+                                    <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-white/10">
+                                        <Image
+                                            src={agent.imageUrl || '/logos/aiagent-bg.png'}
+                                            alt={agent.name}
+                                            fill
+                                            className="object-cover"
+                                        />
                                     </div>
                                 </div>
-                                <div className="bg-[#131B31] rounded-xl p-3 text-center backdrop-blur-sm">
-                                    <div className="text-sm text-gray-400">Txns</div>
-                                    <div className="text-white font-medium mt-1">
-                                        {agent.stats?.transactions?.toLocaleString() || '0'}
-                                    </div>
+
+                                {/* Source Badge */}
+                                <div className="mt-4 px-3 py-1.5 rounded-full text-xs font-medium bg-black/30 backdrop-blur-md border border-white/10">
+                                    <span className={`flex items-center ${badge.textColor}`}>
+                                        <span className={`w-1.5 h-1.5 ${badge.bgColor} rounded-full mr-1.5`}></span>
+                                        {badge.text}
+                                    </span>
                                 </div>
-                                <div className="bg-[#131B31] rounded-xl p-3 text-center backdrop-blur-sm">
-                                    <div className="text-sm text-gray-400">Volume</div>
-                                    <div className="text-white font-medium mt-1">
-                                        ${((agent.stats?.volume || 0) / 1000000).toFixed(1)}M
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Agent Details */}
-                        <div className="flex-1">
-                            {/* Tabs */}
-                            <div className="flex space-x-4 mb-6 border-b border-white/10 pb-2">
-                                <button
-                                    onClick={() => setActiveTab('profile')}
-                                    className={`px-4 py-2 font-medium transition-all duration-200 ${activeTab === 'profile'
-                                            ? 'text-white border-b-2 border-blue-500'
-                                            : 'text-gray-400 hover:text-white'
-                                        }`}
-                                >
-                                    Profile
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('chat')}
-                                    className={`px-4 py-2 font-medium transition-all duration-200 ${activeTab === 'chat'
-                                            ? 'text-white border-b-2 border-blue-500'
-                                            : 'text-gray-400 hover:text-white'
-                                        }`}
-                                >
-                                    Chat
-                                </button>
-                            </div>
-
-                            {/* Profile Content */}
-                            {activeTab === 'profile' && (
-                                <div className="space-y-6">
-                                    {/* Description */}
-                                    <div>
-                                        <h2 className="text-xl font-semibold text-white mb-2">About</h2>
-                                        <p className="text-gray-300">{agent.description}</p>
-                                    </div>
-
-                                    {/* Skills */}
-                                    <div>
-                                        <h2 className="text-xl font-semibold text-white mb-3">Skills</h2>
-                                        <div className="flex flex-wrap gap-2">
-                                            {agent.features?.map((feature, index) => (
-                                                <span
-                                                    key={index}
-                                                    className="px-3 py-1.5 bg-[#131B31] text-blue-400 rounded-lg text-sm"
+                                {/* Agent Name and Score */}
+                                <div className="mt-4 text-center md:text-left">
+                                    <h1 className="text-3xl font-bold text-white">{agent.name}</h1>
+                                    <div className="flex items-center mt-2 justify-center md:justify-start">
+                                        <div className="flex items-center text-yellow-400">
+                                            <span className="text-lg mr-1">⭐</span>
+                                            <span className="text-lg font-medium">{agent.score}</span>
+                                        </div>
+                                        <span className="mx-2 text-gray-500">•</span>
+                                        <span className="text-gray-400">v{agent.version}</span>
+                                        {agent.twitter && (
+                                            <>
+                                                <span className="mx-2 text-gray-500">•</span>
+                                                <a 
+                                                    href={`https://twitter.com/${agent.twitter.replace('@', '')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-purple-400 hover:text-purple-300 transition-colors"
                                                 >
-                                                    {feature}
-                                                </span>
-                                            ))}
-                                            {!agent.features?.length && (
-                                                <span className="text-gray-400">No skills listed</span>
-                                            )}
-                                        </div>
+                                                    {agent.twitter}
+                                                </a>
+                                            </>
+                                        )}
                                     </div>
-
-                                    {/* Twitter Info (only for twitter-based agents) */}
-                                    {(agent.agentType === 'twitter' || agent.twitter) && (
-                                        <div>
-                                            <h2 className="text-xl font-semibold text-white mb-3">Twitter Presence</h2>
-                                            <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                                                <div className="flex items-center mb-3">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                                                        <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z" />
-                                                    </svg>
-                                                    <a 
-                                                        href={`https://twitter.com/${agent.twitter?.replace('@', '')}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-white font-medium hover:text-blue-400 transition-colors"
-                                                    >
-                                                        {agent.twitter}
-                                                    </a>
-                                                </div>
-                                                <p className="text-gray-300 text-sm">
-                                                    This AI agent is trained on the Twitter profile, tweets, and interactions of {agent.name}. 
-                                                    It aims to replicate their communication style, interests, and expertise.
-                                                </p>
-                                                <div className="mt-3 flex space-x-2">
-                                                    <span className="px-2 py-1 bg-[#0D1425] text-purple-400 rounded-lg text-xs">AI Personality</span>
-                                                    <span className="px-2 py-1 bg-[#0D1425] text-purple-400 rounded-lg text-xs">Twitter Data</span>
-                                                    <span className="px-2 py-1 bg-[#0D1425] text-purple-400 rounded-lg text-xs">Interactive</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Character Info (only for character agents) */}
-                                    {agent.agentType === 'character' && !agent.twitter && (
-                                        <div>
-                                            <h2 className="text-xl font-semibold text-white mb-3">Character Profile</h2>
-                                            <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                                                <h3 className="font-medium text-white mb-2">Custom AI Personality</h3>
-                                                <p className="text-gray-300 text-sm">
-                                                    This is a custom character-based AI agent with a unique personality and backstory.
-                                                    It has been designed to embody specific traits and characteristics.
-                                                </p>
-                                                <div className="mt-3 flex space-x-2">
-                                                    <span className="px-2 py-1 bg-[#0D1425] text-amber-400 rounded-lg text-xs">Custom Character</span>
-                                                    <span className="px-2 py-1 bg-[#0D1425] text-amber-400 rounded-lg text-xs">Role Playing</span>
-                                                    <span className="px-2 py-1 bg-[#0D1425] text-amber-400 rounded-lg text-xs">Creative</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Onchain Info (only for onchain agents) */}
-                                    {agent.source === 'agent_chain_users' && (
-                                        <div>
-                                            <h2 className="text-xl font-semibold text-white mb-3">Onchain Presence</h2>
-                                            <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                                                <div className="flex items-center mb-3">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                                                    </svg>
-                                                    <a 
-                                                        href={`https://etherscan.io/address/${agent.contractAddress}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-white font-medium hover:text-blue-400 transition-colors"
-                                                    >
-                                                        View on Etherscan
-                                                    </a>
-                                                </div>
-                                                <p className="text-gray-300 text-sm">
-                                                    This is an onchain AI agent with its own wallet and ability to interact with blockchain protocols.
-                                                    It can perform transactions, analyze on-chain data, and provide insights based on blockchain activity.
-                                                </p>
-                                                <div className="mt-3 flex space-x-2">
-                                                    <span className="px-2 py-1 bg-[#0D1425] text-blue-400 rounded-lg text-xs">Onchain</span>
-                                                    <span className="px-2 py-1 bg-[#0D1425] text-blue-400 rounded-lg text-xs">Autonomous</span>
-                                                    <span className="px-2 py-1 bg-[#0D1425] text-blue-400 rounded-lg text-xs">Web3 Native</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Life Goals (for local agents or if not specified) */}
-                                    {(agent.source === 'local' || (!agent.agentType && !agent.twitter && agent.source !== 'agent_chain_users')) && (
-                                        <div>
-                                            <h2 className="text-xl font-semibold text-white mb-3">Life Goals</h2>
-                                            <div className="space-y-4">
-                                                <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                                                    <h3 className="font-medium text-white mb-2">Resident Community Architect</h3>
-                                                    <p className="text-gray-300 text-sm">
-                                                        Establish and nurture a thriving Web3 and AI innovation hub, fostering a resilient tech community.
-                                                    </p>
-                                                </div>
-
-                                                <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                                                    <h3 className="font-medium text-white mb-2">Ecosystem Connector</h3>
-                                                    <p className="text-gray-300 text-sm">
-                                                        Act as a bridge connecting the tech ecosystem with global networks, facilitating knowledge exchange and collaboration.
-                                                    </p>
-                                                </div>
-
-                                                <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
-                                                    <h3 className="font-medium text-white mb-2">Agile Innovator</h3>
-                                                    <p className="text-gray-300 text-sm">
-                                                        Apply agile methodologies to rapidly develop and adapt the innovation hub to meet evolving needs.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
-                            )}
 
-                            {/* Chat Content */}
-                            {activeTab === 'chat' && (
-                                <div className="flex flex-col h-[600px]">
-                                    {/* Messages Container */}
-                                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0D1425] rounded-t-xl">
-                                        {messages.map((message) => (
-                                            <ChatMessage
-                                                key={message.id}
-                                                id={message.id}
-                                                role={message.role}
-                                                content={message.content}
-                                            />
-                                        ))}
-                                        <div ref={messagesEndRef} />
+                                {/* Agent Stats */}
+                                <div className="grid grid-cols-3 gap-4 mt-6 w-full max-w-xs">
+                                    <div className="bg-[#131B31] rounded-xl p-3 text-center backdrop-blur-sm">
+                                        <div className="text-sm text-gray-400">Users</div>
+                                        <div className="text-white font-medium mt-1">
+                                            {agent.stats?.users?.toLocaleString() || '0'}
+                                        </div>
                                     </div>
+                                    <div className="bg-[#131B31] rounded-xl p-3 text-center backdrop-blur-sm">
+                                        <div className="text-sm text-gray-400">Txns</div>
+                                        <div className="text-white font-medium mt-1">
+                                            {agent.stats?.transactions?.toLocaleString() || '0'}
+                                        </div>
+                                    </div>
+                                    <div className="bg-[#131B31] rounded-xl p-3 text-center backdrop-blur-sm">
+                                        <div className="text-sm text-gray-400">Volume</div>
+                                        <div className="text-white font-medium mt-1">
+                                            ${((agent.stats?.volume || 0) / 1000000).toFixed(1)}M
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                                    {/* Input Area */}
-                                    <div className="p-4 bg-[#131B31] rounded-b-xl border-t border-white/5">
-                                        <div className="flex items-end gap-2">
-                                            <Textarea
-                                                value={inputMessage}
-                                                onChange={(e) => setInputMessage(e.target.value)}
-                                                placeholder="Type your message..."
-                                                className="min-h-[60px] bg-[#0D1425] border-white/10 text-white resize-none"
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                                        e.preventDefault()
-                                                        handleSendMessage()
-                                                    }
-                                                }}
-                                            />
-                                            <Button
-                                                onClick={handleSendMessage}
-                                                disabled={isSending || !inputMessage.trim()}
-                                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                                            >
-                                                {isSending ? (
-                                                    <span className="flex items-center">
-                                                        <LoadingState variant="inline" text="Thinking" />
+                            {/* Agent Details */}
+                            <div className="flex-1">
+                                {/* Tabs */}
+                                <div className="flex space-x-4 mb-6 border-b border-white/10 pb-2">
+                                    <button
+                                        onClick={() => setActiveTab('profile')}
+                                        className={`px-4 py-2 font-medium transition-all duration-200 ${activeTab === 'profile'
+                                                ? 'text-white border-b-2 border-blue-500'
+                                                : 'text-gray-400 hover:text-white'
+                                            }`}
+                                    >
+                                        Profile
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab('chat')}
+                                        className={`px-4 py-2 font-medium transition-all duration-200 ${activeTab === 'chat'
+                                                ? 'text-white border-b-2 border-blue-500'
+                                                : 'text-gray-400 hover:text-white'
+                                            }`}
+                                    >
+                                        Chat
+                                    </button>
+                                </div>
+
+                                {/* Profile Content */}
+                                {activeTab === 'profile' && (
+                                    <div className="space-y-6">
+                                        {/* Description */}
+                                        <div>
+                                            <h2 className="text-xl font-semibold text-white mb-2">About</h2>
+                                            <p className="text-gray-300">{agent.description}</p>
+                                        </div>
+
+                                        {/* Skills */}
+                                        <div>
+                                            <h2 className="text-xl font-semibold text-white mb-3">Skills</h2>
+                                            <div className="flex flex-wrap gap-2">
+                                                {agent.features?.map((feature, index) => (
+                                                    <span
+                                                        key={index}
+                                                        className="px-3 py-1.5 bg-[#131B31] text-blue-400 rounded-lg text-sm"
+                                                    >
+                                                        {feature}
                                                     </span>
-                                                ) : (
-                                                    'Send'
+                                                ))}
+                                                {!agent.features?.length && (
+                                                    <span className="text-gray-400">No skills listed</span>
                                                 )}
-                                            </Button>
+                                            </div>
+                                        </div>
+
+                                        {/* Twitter Info (only for twitter-based agents) */}
+                                        {(agent.agentType === 'twitter' || agent.twitter) && (
+                                            <div>
+                                                <h2 className="text-xl font-semibold text-white mb-3">Twitter Presence</h2>
+                                                <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
+                                                    <div className="flex items-center mb-3">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                                                            <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z" />
+                                                        </svg>
+                                                        <a 
+                                                            href={`https://twitter.com/${agent.twitter?.replace('@', '')}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-white font-medium hover:text-blue-400 transition-colors"
+                                                        >
+                                                            {agent.twitter}
+                                                        </a>
+                                                    </div>
+                                                    <p className="text-gray-300 text-sm">
+                                                        This AI agent is trained on the Twitter profile, tweets, and interactions of {agent.name}. 
+                                                        It aims to replicate their communication style, interests, and expertise.
+                                                    </p>
+                                                    <div className="mt-3 flex space-x-2">
+                                                        <span className="px-2 py-1 bg-[#0D1425] text-purple-400 rounded-lg text-xs">AI Personality</span>
+                                                        <span className="px-2 py-1 bg-[#0D1425] text-purple-400 rounded-lg text-xs">Twitter Data</span>
+                                                        <span className="px-2 py-1 bg-[#0D1425] text-purple-400 rounded-lg text-xs">Interactive</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Character Info (only for character agents) */}
+                                        {agent.agentType === 'character' && !agent.twitter && (
+                                            <div>
+                                                <h2 className="text-xl font-semibold text-white mb-3">Character Profile</h2>
+                                                <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
+                                                    <h3 className="font-medium text-white mb-2">Custom AI Personality</h3>
+                                                    <p className="text-gray-300 text-sm">
+                                                        This is a custom character-based AI agent with a unique personality and backstory.
+                                                        It has been designed to embody specific traits and characteristics.
+                                                    </p>
+                                                    <div className="mt-3 flex space-x-2">
+                                                        <span className="px-2 py-1 bg-[#0D1425] text-amber-400 rounded-lg text-xs">Custom Character</span>
+                                                        <span className="px-2 py-1 bg-[#0D1425] text-amber-400 rounded-lg text-xs">Role Playing</span>
+                                                        <span className="px-2 py-1 bg-[#0D1425] text-amber-400 rounded-lg text-xs">Creative</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Onchain Info (only for onchain agents) */}
+                                        {agent.source === 'agent_chain_users' && (
+                                            <div>
+                                                <h2 className="text-xl font-semibold text-white mb-3">Onchain Presence</h2>
+                                                <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
+                                                    <div className="flex items-center mb-3">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                                                        </svg>
+                                                        <a 
+                                                            href={`https://etherscan.io/address/${agent.contractAddress}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-white font-medium hover:text-blue-400 transition-colors"
+                                                        >
+                                                            View on Etherscan
+                                                        </a>
+                                                    </div>
+                                                    <p className="text-gray-300 text-sm">
+                                                        This is an onchain AI agent with its own wallet and ability to interact with blockchain protocols.
+                                                        It can perform transactions, analyze on-chain data, and provide insights based on blockchain activity.
+                                                    </p>
+                                                    <div className="mt-3 flex space-x-2">
+                                                        <span className="px-2 py-1 bg-[#0D1425] text-blue-400 rounded-lg text-xs">Onchain</span>
+                                                        <span className="px-2 py-1 bg-[#0D1425] text-blue-400 rounded-lg text-xs">Autonomous</span>
+                                                        <span className="px-2 py-1 bg-[#0D1425] text-blue-400 rounded-lg text-xs">Web3 Native</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Life Goals (for local agents or if not specified) */}
+                                        {(agent.source === 'local' || (!agent.agentType && !agent.twitter && agent.source !== 'agent_chain_users')) && (
+                                            <div>
+                                                <h2 className="text-xl font-semibold text-white mb-3">Life Goals</h2>
+                                                <div className="space-y-4">
+                                                    <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
+                                                        <h3 className="font-medium text-white mb-2">Resident Community Architect</h3>
+                                                        <p className="text-gray-300 text-sm">
+                                                            Establish and nurture a thriving Web3 and AI innovation hub, fostering a resilient tech community.
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
+                                                        <h3 className="font-medium text-white mb-2">Ecosystem Connector</h3>
+                                                        <p className="text-gray-300 text-sm">
+                                                            Act as a bridge connecting the tech ecosystem with global networks, facilitating knowledge exchange and collaboration.
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="bg-[#131B31]/50 rounded-xl p-4 backdrop-blur-sm border border-white/5">
+                                                        <h3 className="font-medium text-white mb-2">Agile Innovator</h3>
+                                                        <p className="text-gray-300 text-sm">
+                                                            Apply agile methodologies to rapidly develop and adapt the innovation hub to meet evolving needs.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Chat Content */}
+                                {activeTab === 'chat' && (
+                                    <div className="flex flex-col h-[600px]">
+                                        {/* Messages Container */}
+                                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0D1425] rounded-t-xl">
+                                            {messages.map((message) => (
+                                                <ChatMessage
+                                                    key={message.id}
+                                                    id={message.id}
+                                                    role={message.role}
+                                                    content={message.content}
+                                                />
+                                            ))}
+                                            <div ref={messagesEndRef} />
+                                        </div>
+
+                                        {/* Input Area */}
+                                        <div className="p-4 bg-[#131B31] rounded-b-xl border-t border-white/5">
+                                            <div className="flex items-end gap-2">
+                                                <Textarea
+                                                    value={inputMessage}
+                                                    onChange={(e) => setInputMessage(e.target.value)}
+                                                    placeholder="Type your message..."
+                                                    className="min-h-[60px] bg-[#0D1425] border-white/10 text-white resize-none"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                                            e.preventDefault()
+                                                            handleSendMessage()
+                                                        }
+                                                    }}
+                                                />
+                                                <Button
+                                                    onClick={handleSendMessage}
+                                                    disabled={isSending || !inputMessage.trim()}
+                                                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                                                >
+                                                    {isSending ? (
+                                                        <span className="flex items-center">
+                                                            <LoadingState variant="inline" text="Thinking" />
+                                                        </span>
+                                                    ) : (
+                                                        'Send'
+                                                    )}
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </AuthCheck>
     )
 } 

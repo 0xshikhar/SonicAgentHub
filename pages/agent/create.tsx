@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
+import { AuthCheck } from '@/components/AuthCheck';
 
 interface FormData {
   name: string;
@@ -261,73 +262,75 @@ export default function CreateAgentPage() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="bg-[#0D1425] rounded-2xl p-8 relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl"></div>
-        <div className="relative">
-          <h1 className="text-3xl font-bold text-white mb-8">Create AI Agent</h1>
+    <AuthCheck>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-[#0D1425] rounded-2xl p-8 relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl"></div>
+          <div className="relative">
+            <h1 className="text-3xl font-bold text-white mb-8">Create AI Agent</h1>
 
-          {/* Progress Steps */}
-          <div className="flex items-center mb-8">
-            {[1, 2, 3].map((step) => (
-              <div key={step} className="flex items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    step <= currentStep
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
-                      : 'bg-[#131B31] text-gray-400'
-                  }`}
-                >
-                  {step}
-                </div>
-                {step < 3 && (
+            {/* Progress Steps */}
+            <div className="flex items-center mb-8">
+              {[1, 2, 3].map((step) => (
+                <div key={step} className="flex items-center">
                   <div
-                    className={`w-24 h-1 mx-2 ${
-                      step < currentStep
-                        ? 'bg-gradient-to-r from-blue-500 to-purple-500'
-                        : 'bg-[#131B31]'
+                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      step <= currentStep
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
+                        : 'bg-[#131B31] text-gray-400'
                     }`}
-                  />
+                  >
+                    {step}
+                  </div>
+                  {step < 3 && (
+                    <div
+                      className={`w-24 h-1 mx-2 ${
+                        step < currentStep
+                          ? 'bg-gradient-to-r from-blue-500 to-purple-500'
+                          : 'bg-[#131B31]'
+                      }`}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              {currentStep === 1 && renderStep1()}
+              {currentStep === 2 && renderStep2()}
+              {currentStep === 3 && renderStep3()}
+
+              <div className="flex justify-between mt-8">
+                {currentStep > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep((prev) => prev - 1)}
+                    className="px-6 py-3 bg-[#131B31] text-white rounded-xl hover:bg-[#1a2234]"
+                  >
+                    Previous
+                  </button>
+                )}
+                {currentStep < 3 ? (
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep((prev) => prev + 1)}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:opacity-90"
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:opacity-90"
+                  >
+                    Submit
+                  </button>
                 )}
               </div>
-            ))}
+            </form>
           </div>
-
-          <form onSubmit={handleSubmit}>
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
-
-            <div className="flex justify-between mt-8">
-              {currentStep > 1 && (
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep((prev) => prev - 1)}
-                  className="px-6 py-3 bg-[#131B31] text-white rounded-xl hover:bg-[#1a2234]"
-                >
-                  Previous
-                </button>
-              )}
-              {currentStep < 3 ? (
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep((prev) => prev + 1)}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:opacity-90"
-                >
-                  Next
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:opacity-90"
-                >
-                  Submit
-                </button>
-              )}
-            </div>
-          </form>
         </div>
       </div>
-    </div>
+    </AuthCheck>
   );
 } 

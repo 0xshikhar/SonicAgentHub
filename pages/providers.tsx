@@ -4,14 +4,8 @@ import '@rainbow-me/rainbowkit/styles.css';
 import {
     getDefaultConfig,
     RainbowKitProvider,
-    connectorsForWallets,
     getDefaultWallets,
 } from '@rainbow-me/rainbowkit';
-import {
-    argentWallet,
-    trustWallet,
-    ledgerWallet,
-} from '@rainbow-me/rainbowkit/wallets';
 import { WagmiProvider } from 'wagmi';
 import {
     QueryClientProvider,
@@ -26,9 +20,6 @@ import {
 
 import { agentChain } from '@/lib/agentChain';
 import { WalletAuthProvider } from '@/components/WalletAuthProvider';
-
-// import { publicProvider } from 'wagmi/providers/public';
-// import { alchemyProvider } from "wagmi/providers/alchemy";
 
 
 const config = getDefaultConfig({
@@ -52,7 +43,6 @@ const demoAppInfo = {
 const queryClient = new QueryClient();
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-    console.log("wallet", process.env.WALLET_CONNECT_PROJECT_ID)
     const [mounted, setMounted] = React.useState(false);
     React.useEffect(() => setMounted(true), []);
     return (

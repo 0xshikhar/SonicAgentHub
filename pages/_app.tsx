@@ -12,7 +12,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <title>Agent Chain - AI-Powered Autonomous Agent Platform</title>
         <meta name="description" content="Discover and deploy AI-powered autonomous agents for trading, social media, DeFi, NFTs, gaming, and DAOs." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/logos/favicon.ico" />
       </Head>
       <Providers>
         <div className="min-h-screen flex flex-col">

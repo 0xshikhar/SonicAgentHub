@@ -1,6 +1,6 @@
 # Supabase Setup Guide
 
-This guide will help you set up the required tables in your Supabase database for the Agent Market platform.
+This guide will help you set up the required tables in your Supabase database for the Agent chain platform.
 
 ## Issue: Missing `agent_chain_general_agents` Table
 

@@ -26,6 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { showToast } from "@/lib/toast";
 import { AgentNavigation } from "@/components/AgentNavigation"
 import { AdminAgentCreator } from "@/components/AdminAgentCreator"
+import { AuthCheck } from "@/components/AuthCheck"
 
 // Twitter profile form schema
 const twitterFormSchema = z.object({
@@ -317,7 +318,7 @@ const CreateAgentPage: NextPage = () => {
   }
 
   return (
-    <>
+    <AuthCheck>
       <Head>
         <title>Create AI Agent | Agent Chain</title>
         <meta
@@ -763,7 +764,7 @@ const CreateAgentPage: NextPage = () => {
           </div>
         </div>
       </div>
-    </>
+    </AuthCheck>
   );
 };
 

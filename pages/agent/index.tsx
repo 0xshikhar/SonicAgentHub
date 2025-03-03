@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Search, Filter, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { AuthCheck } from '@/components/AuthCheck'
 
 // Define the Agent interface based on our database schema
 interface Agent {
@@ -144,100 +145,70 @@ export default function AgentsPage() {
     : filteredAgents
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">AI Agents Marketplace</h1>
-          <p className="mt-2 text-gray-600">
-            Discover and interact with AI agents based on real Twitter profiles or custom characters
-          </p>
-        </div>
-        
-        {/* Filters */}
-        <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                <Input
-                  type="text"
-                  placeholder="Search agents by name, description, or traits..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-gray-50 border-gray-200"
-                />
+    <AuthCheck>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">AI Agents Marketplace</h1>
+            <p className="mt-2 text-gray-600">
+              Discover and interact with AI agents based on real Twitter profiles or custom characters
+            </p>
+          </div>
+          
+          {/* Filters */}
+          <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <Input
+                    type="text"
+                    placeholder="Search agents by name, description, or traits..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 bg-gray-50 border-gray-200"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <Select value={agentType} onValueChange={setAgentType}>
+                  <SelectTrigger className="w-[180px] bg-gray-50 border-gray-200">
+                    <SelectValue placeholder="Agent Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="twitter">Twitter Profiles</SelectItem>
+                    <SelectItem value="character">Custom Characters</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-[180px] bg-gray-50 border-gray-200">
+                    <SelectValue placeholder="Sort By" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
+                    <SelectItem value="name">Name (A-Z)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            
-            <div className="flex gap-3">
-              <Select value={agentType} onValueChange={setAgentType}>
-                <SelectTrigger className="w-[180px] bg-gray-50 border-gray-200">
-                  <SelectValue placeholder="Agent Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="twitter">Twitter Profiles</SelectItem>
-                  <SelectItem value="character">Custom Characters</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[180px] bg-gray-50 border-gray-200">
-                  <SelectValue placeholder="Sort By" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="name">Name (A-Z)</SelectItem>
-                </SelectContent>
-              </Select>
+          </div>
+          
+          {/* Featured Section */}
+          <div className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 flex items-center">
+                <Sparkles className="mr-2 text-yellow-500" size={20} />
+                Featured Agents
+              </h2>
             </div>
-          </div>
-        </div>
-        
-        {/* Featured Section */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold text-gray-900 flex items-center">
-              <Sparkles className="mr-2 text-yellow-500" size={20} />
-              Featured Agents
-            </h2>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {displayAgents.slice(0, 4).map((agent) => (
-              <AgentCard
-                key={agent.id}
-                id={agent.id}
-                handle={agent.handle}
-                name={agent.name}
-                imageUrl={agent.profile_picture}
-                description={agent.description}
-                traits={agent.traits}
-                background={agent.background}
-                twitterHandle={agent.twitter_handle}
-              />
-            ))}
-          </div>
-        </div>
-        
-        {/* All Agents Section */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold text-gray-900">All Agents</h2>
             
-            <Tabs defaultValue="grid" className="w-[200px]">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="grid">Grid</TabsTrigger>
-                <TabsTrigger value="list">List</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-          
-          <TabsContent value="grid" className="mt-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {displayAgents.map((agent) => (
+              {displayAgents.slice(0, 4).map((agent) => (
                 <AgentCard
                   key={agent.id}
                   id={agent.id}
@@ -251,67 +222,99 @@ export default function AgentsPage() {
                 />
               ))}
             </div>
-          </TabsContent>
-          
-          <TabsContent value="list" className="mt-0">
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              {displayAgents.map((agent, index) => (
-                <div 
-                  key={agent.id}
-                  className={`flex items-center p-4 ${
-                    index !== displayAgents.length - 1 ? 'border-b border-gray-100' : ''
-                  }`}
-                >
-                  <div className="relative h-12 w-12 rounded-full overflow-hidden mr-4">
-                    <Image
-                      src={agent.profile_picture}
-                      alt={`${agent.name}'s profile picture`}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-medium text-gray-900 truncate">{agent.name}</h3>
-                    <p className="text-sm text-gray-500 truncate">{agent.description}</p>
-                  </div>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="ml-4"
-                    asChild
-                  >
-                    <Link href={`/agent/${agent.handle}`}>
-                      View Profile
-                    </Link>
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-        </div>
-        
-        {/* No results */}
-        {filteredAgents.length === 0 && !isLoading && (
-          <div className="text-center py-12 bg-white rounded-xl shadow-sm mt-8">
-            <Filter className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-lg font-medium text-gray-900">No agents found</h3>
-            <p className="mt-1 text-gray-500">Try adjusting your search or filters</p>
-            <Button 
-              onClick={() => {
-                setSearchTerm('')
-                setAgentType('all')
-                setSortBy('newest')
-              }}
-              variant="outline"
-              className="mt-4"
-            >
-              Clear Filters
-            </Button>
           </div>
-        )}
+          
+          {/* All Agents Section */}
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900">All Agents</h2>
+              
+              <Tabs defaultValue="grid" className="w-[200px]">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="grid">Grid</TabsTrigger>
+                  <TabsTrigger value="list">List</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            
+            <TabsContent value="grid" className="mt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {displayAgents.map((agent) => (
+                  <AgentCard
+                    key={agent.id}
+                    id={agent.id}
+                    handle={agent.handle}
+                    name={agent.name}
+                    imageUrl={agent.profile_picture}
+                    description={agent.description}
+                    traits={agent.traits}
+                    background={agent.background}
+                    twitterHandle={agent.twitter_handle}
+                  />
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="list" className="mt-0">
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                {displayAgents.map((agent, index) => (
+                  <div 
+                    key={agent.id}
+                    className={`flex items-center p-4 ${
+                      index !== displayAgents.length - 1 ? 'border-b border-gray-100' : ''
+                    }`}
+                  >
+                    <div className="relative h-12 w-12 rounded-full overflow-hidden mr-4">
+                      <Image
+                        src={agent.profile_picture}
+                        alt={`${agent.name}'s profile picture`}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-medium text-gray-900 truncate">{agent.name}</h3>
+                      <p className="text-sm text-gray-500 truncate">{agent.description}</p>
+                    </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="ml-4"
+                      asChild
+                    >
+                      <Link href={`/agent/${agent.handle}`}>
+                        View Profile
+                      </Link>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+          </div>
+          
+          {/* No results */}
+          {filteredAgents.length === 0 && !isLoading && (
+            <div className="text-center py-12 bg-white rounded-xl shadow-sm mt-8">
+              <Filter className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-lg font-medium text-gray-900">No agents found</h3>
+              <p className="mt-1 text-gray-500">Try adjusting your search or filters</p>
+              <Button 
+                onClick={() => {
+                  setSearchTerm('')
+                  setAgentType('all')
+                  setSortBy('newest')
+                }}
+                variant="outline"
+                className="mt-4"
+              >
+                Clear Filters
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </AuthCheck>
   )
 } 

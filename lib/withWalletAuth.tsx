@@ -25,7 +25,7 @@ export function withWalletAuth<P extends object>(
   const { redirectTo = '/' } = options
 
   function WithWalletAuthComponent(props: P) {
-    const { isAuthenticated, isLoading, isProcessing, error, wallet } = useWalletAuth({
+    const { isAuthenticated, isLoading, error, wallet } = useWalletAuth({ 
       requireAuth: true,
       redirectTo
     })
@@ -38,7 +38,7 @@ export function withWalletAuth<P extends object>(
       }
     }, [error])
 
-    if (isLoading || isProcessing) {
+    if (isLoading) {
       return <LoadingState />
     }
 

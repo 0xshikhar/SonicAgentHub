@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAccount } from 'wagmi'
 import { useRouter } from 'next/router'
-import { isWalletConnected, setWalletConnected } from '../auth'
 import { useWalletAuthContext } from '@/components/WalletAuthProvider'
+import { isWalletConnected, setWalletConnected } from '@/lib/auth'
+import { showToast } from '@/lib/toast'
 
 interface UseWalletAuthOptions {
     /**
@@ -25,26 +26,46 @@ export function useWalletAuth(options: UseWalletAuthOptions = {}) {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(true)
     const { isProcessingUser, userStored, error, wallet } = useWalletAuthContext()
+    const hasRedirected = useRef(false)
+    const lastAuthCheck = useRef<number>(0)
 
     useEffect(() => {
+        // Throttle auth checks to once every 2 seconds
+        const now = Date.now()
+        if (now - lastAuthCheck.current < 2000) {
+            return
+        }
+        lastAuthCheck.current = now
+
         // Check if the wallet is connected
-        const walletConnected = isWalletConnected() && isConnected && !!wallet
-        console.log(`[useWalletAuth] Wallet connected: ${walletConnected}, isConnected: ${isConnected}, wallet: ${JSON.stringify(wallet)}`)
+        const walletConnected = isWalletConnected() && isConnected && !!wallet?.address
+        
+        // Set the wallet-connected cookie if the wallet is connected
+        if (isConnected && address) {
+            setWalletConnected(true)
+        }
         
         setIsAuthenticated(walletConnected)
         setIsLoading(isProcessingUser || false)
 
         // If authentication is required and the wallet is not connected, redirect to the home page
-        if (requireAuth && !walletConnected && !isLoading && !isProcessingUser) {
+        // Only redirect once to prevent infinite redirects
+        if (requireAuth && !walletConnected && !isLoading && !isProcessingUser && !hasRedirected.current) {
             console.log(`[useWalletAuth] Redirecting to ${redirectTo} because authentication is required but wallet is not connected`)
+            hasRedirected.current = true
             router.push(redirectTo)
+            showToast.error('Please connect your wallet to access this page')
         }
-    }, [isConnected, requireAuth, redirectTo, router, isLoading, isProcessingUser, wallet])
+        
+        // Reset redirect flag if wallet is connected
+        if (walletConnected) {
+            hasRedirected.current = false
+        }
+    }, [isConnected, requireAuth, redirectTo, router, isLoading, isProcessingUser, wallet, address])
 
     return {
         isAuthenticated,
-        isLoading: isLoading || isProcessingUser,
-        isProcessing: isProcessingUser,
+        isLoading,
         wallet,
         error
     }

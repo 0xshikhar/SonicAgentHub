@@ -281,18 +281,18 @@ const HeroSection = () => {
                             </span>
                         </h2>
                         <div className="text-gray-400 max-w-2xl mx-auto">
-                            Empowering digital transformation with autonomous Agent Markets that automate businesses, redefine online
+                            Empowering digital transformation with autonomous Agent chains that automate businesses, redefine online
                             interaction, and elevate user engagement. Agents AI brings the next
                         </div>
                     </div>
 
                     {/* Features Grid */}
                     <div className="grid grid-cols-12 gap-6">
-                        {/* Agent Markets Grid Card - 7 columns */}
+                        {/* Agent chains Grid Card - 7 columns */}
                         <div className="col-span-7 bg-[#0D1425] rounded-2xl p-8 relative group">
                             <div className="absolute inset-0 bg-gradient-to-r from-blue-300/5 to-purple-300/5 rounded-2xl"></div>
                             <div className="relative">
-                                <h3 className="text-xl text-white font-medium mb-2">Access thousands of Agent Markets</h3>
+                                <h3 className="text-xl text-white font-medium mb-2">Access thousands of Agent chains</h3>
                                 <div className="text-gray-400 text-sm mb-8">Create, Customize, and Unleash Intelligent Characters with Agents AI.</div>
                                 <div className="grid grid-cols-8 gap-4">
                                     {[...Array(16)].map((_, i) => (
@@ -338,7 +338,7 @@ const HeroSection = () => {
 
                                 {/* Text Content */}
                                 <h3 className="text-xl text-white font-medium leading-relaxed mb-2">
-                                    Get Exclusive Access to IDO Allocations in Leading Agent Market Projects through AgentPad.
+                                    Get Exclusive Access to IDO Allocations in Leading Agent chain Projects through AgentPad.
                                 </h3>
                             </div>
                         </div>
@@ -350,7 +350,7 @@ const HeroSection = () => {
                             <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-300 rounded-full blur-3xl opacity-20"></div>
                             <div className="relative">
                                 <h3 className="text-xl text-white font-medium mb-2">Token Management</h3>
-                                <div className="text-gray-400 text-sm mb-8">Easily Launch Your Agent Market Token & Amplify Its Reach with the Agent Portal.</div>
+                                <div className="text-gray-400 text-sm mb-8">Easily Launch Your Agent chain Token & Amplify Its Reach with the Agent Portal.</div>
                                 <div className="relative h-48">
                                     <div className="absolute inset-0">
                                         {/* Semi-circle background with gradient */}
@@ -413,7 +413,7 @@ const HeroSection = () => {
                             <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-300 rounded-full blur-3xl opacity-20"></div>
                             <div className="relative">
                                 <h3 className="text-xl text-white font-medium mb-2">AI Moderation</h3>
-                                <div className="text-gray-400 text-sm mb-8">We'll develop a dedicated AI moderation bot of your Agent Market, designed to actively engage and manage your community.</div>
+                                <div className="text-gray-400 text-sm mb-8">We'll develop a dedicated AI moderation bot of your Agent chain, designed to actively engage and manage your community.</div>
                                 {/* Custom slider UI */}
                                 <div className="relative h-12 flex items-center">
                                     <div className="w-full h-2 bg-[#131B31] rounded-full">
@@ -437,7 +437,7 @@ const HeroSection = () => {
                             <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-300 rounded-full blur-3xl opacity-20"></div>
                             <div className="relative">
                                 <h3 className="text-xl text-white font-medium mb-2">Social Media Management</h3>
-                                <div className="text-gray-400 text-sm mb-8">Your Agent Market will handle content creation and posting across social networks, keeping your audience engaged effortlessly.</div>
+                                <div className="text-gray-400 text-sm mb-8">Your Agent chain will handle content creation and posting across social networks, keeping your audience engaged effortlessly.</div>
                                 {/* Task list UI */}
                                 <div className="relative">
                                     <div className="w-16 h-16 bg-[#131B31] rounded-xl flex items-center justify-center mb-4">

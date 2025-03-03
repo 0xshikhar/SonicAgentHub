@@ -6,10 +6,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useAccount } from 'wagmi'
 import { ConnectButton } from "@rainbow-me/rainbowkit"
-import supabase from '@/lib/supabase'
 import { deleteCookie, setCookie } from 'cookies-next'
-import { showToast } from '@/lib/toast'
-import { getUserProfileByAddress } from '@/lib/user-utils'
+import { useWalletAuthContext } from '../WalletAuthProvider'
 
 const navigation = [
     { name: 'Home', href: '/' },
@@ -19,61 +17,28 @@ const navigation = [
 export function Navbar() {
     const router = useRouter()
     const { address, isConnected } = useAccount()
+    const { wallet } = useWalletAuthContext()
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-    const [userHandle, setUserHandle] = useState<string | null>(null)
     const [isLoadingUser, setIsLoadingUser] = useState(false)
 
     useEffect(() => {
         if (isConnected && address) {
             // Set wallet-connected cookie for middleware
             setCookie('wallet-connected', 'true', { maxAge: 60 * 60 * 24 }) // 24 hours
-
-            // Fetch user handle from wallet address
-            const fetchUserHandle = async () => {
-                setIsLoadingUser(true)
-                try {
-                    console.log(`Fetching user profile for address: ${address}`)
-                    
-                    // Try to get the user profile using the utility function
-                    const userProfile = await getUserProfileByAddress(address)
-                    
-                    if (userProfile?.handle) {
-                        console.log(`Found user profile with handle: ${userProfile.handle}`)
-                        setUserHandle(userProfile.handle)
-                    } else {
-                        // Fallback to direct query if the utility function doesn't work
-                        console.log('Falling back to direct wallet query')
-                        const { data } = await supabase
-                            .from('agent_chain_wallets')
-                            .select('handle')
-                            .eq('address', address)
-                        
-                        if (data && data.length > 0 && data[0]?.handle) {
-                            console.log(`Found wallet with handle: ${data[0]?.handle}`)
-                            setUserHandle(data[0]?.handle)
-                        } else {
-                            console.log('No user profile or wallet found for this address')
-                            setUserHandle(null)
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error fetching user handle:', error)
-                    setUserHandle(null)
-                } finally {
-                    setIsLoadingUser(false)
-                }
-            }
-
-            fetchUserHandle()
-        } else {
-            setUserHandle(null)
+        } else if (!isConnected) {
+            // Reset state when wallet is disconnected
+            deleteCookie('wallet-connected')
         }
-    }, [address, isConnected])
+    }, [isConnected, address])
 
-    // Add profile link to navigation if user is connected
+    // Add profile link to navigation if user has an agent
     const navItems = [...navigation]
-    if (isConnected && userHandle) {
-        navItems.push({ name: 'Profile', href: `/profile/${userHandle}` })
+    
+    if (isConnected && wallet?.hasAgent && wallet?.agentHandle) {
+        navItems.push({ name: 'Profile', href: `/profile/${wallet.agentHandle}` })
+    } else if (isConnected) {
+        // If user is connected but doesn't have an agent, add a link to create one
+        navItems.push({ name: 'Create Agent', href: '/create-agent' })
     }
 
     // Add dashboard link if user is connected
@@ -93,12 +58,12 @@ export function Navbar() {
                                 <div className="relative flex items-center bg-[#0A0F1E] rounded-lg p-2">
                                     <Image
                                         src="/logo.svg"
-                                        alt="Agent Market Logo"
+                                        alt="Agent chain Logo"
                                         width={40}
                                         height={40}
                                         className="mr-3"
                                     />
-                                    <span className="text-white text-xl font-semibold">Agent Market</span>
+                                    <span className="text-white text-xl font-semibold">Agent chain</span>
                                 </div>
                             </div>
                         </Link>
