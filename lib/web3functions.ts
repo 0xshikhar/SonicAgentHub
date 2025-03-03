@@ -16,73 +16,108 @@ import { AgentWalletRow } from "./types";
 /**
  * Creates a new wallet for an agent and saves it to the database
  * @param handle The Twitter handle of the agent
- * @returns A boolean indicating whether the wallet was created successfully
+ * @returns The created wallet data or false if creation failed
  */
-export async function createAndSaveNewWallet(handle: string): Promise<boolean> {
+export async function createAndSaveNewWallet(handle: string) {
     try {
-        handle = cleanHandle(handle);
-
+        console.log(`[WEB3] Creating new wallet for handle: ${handle}`)
+        
+        // Generate a new wallet
         const newWallet = ethers.Wallet.createRandom();
-        console.log(`Created random wallet for ${handle}: ${newWallet.address}`);
-
-        // Check if RPC_URL is available
-        if (!process.env.RPC_URL) {
-            console.warn("RPC_URL not configured. Skipping permit signature generation.");
-            
-            // Save wallet without permit signature in development mode
-            await createWallet({
-                handle,
-                address: newWallet.address,
-                privateKey: newWallet.privateKey,
-                permitSignature: "development-mode-no-signature",
-            });
-            
-            return true;
+        console.log(`[WEB3] Generated new wallet with address: ${newWallet.address}`)
+        
+        // Check if wallet already exists
+        const existingWallet = await getWalletByHandle(handle);
+        if (existingWallet) {
+            console.log(`[WEB3] Wallet already exists for handle: ${handle} with address: ${existingWallet.address}`)
+            return existingWallet;
         }
-
-        // Get the signature for permit
+        
+        console.log(`[WEB3] No existing wallet found, proceeding with wallet creation for: ${handle}`)
+        
+        // Create a provider and connect to the network
         try {
+            console.log(`[WEB3] Connecting to RPC URL: ${process.env.RPC_URL}`)
             const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
-            const plainWallet = new ethers.Wallet(newWallet.privateKey, provider);
+            const plainWallet = new ethers.Wallet(process.env.DEPLOYER_WALLET_PRIVATE_KEY!, provider);
+            
+            // Get the token contract
             const tokenContract = new ethers.Contract(
                 ERC20_TOKEN_CONTRACT_ADDRESS!,
                 agentCoinABI,
                 plainWallet
             );
-
+            
+            console.log(`[WEB3] Connected to network, generating permit signature for: ${handle}`)
+            
+            // Generate permit signature
             const permitSignature = await signPermit({
                 wallet: plainWallet,
                 token: tokenContract,
                 spender: DEPLOYER_WALLET_ADDRESS,
             });
-
-            await createWallet({
+            
+            console.log(`[WEB3] Generated permit signature, saving wallet to database for: ${handle}`)
+            
+            // Save wallet to database
+            const walletData = await createWallet({
                 handle,
                 address: newWallet.address,
                 privateKey: newWallet.privateKey,
                 permitSignature,
             });
+            
+            if (!walletData) {
+                console.error(`[WEB3] Failed to save wallet to database for: ${handle}`)
+                return null;
+            }
+            
+            console.log(`[WEB3] Successfully saved wallet to database for: ${handle}`)
+            
+            // Try to send initial funds
+            try {
+                console.log(`[WEB3] Attempting to send initial funds to: ${newWallet.address}`)
+                await sendInitialFundsToWallet(newWallet.address);
+                console.log(`[WEB3] Successfully sent initial funds to: ${newWallet.address}`)
+            } catch (fundingError) {
+                console.error(`[WEB3] Error sending initial funds: ${fundingError instanceof Error ? fundingError.message : String(fundingError)}`)
+            }
+            
+            return walletData;
         } catch (error) {
-            console.error("Error connecting to RPC or generating permit signature:", error);
+            console.error(`[WEB3] Error connecting to RPC or generating permit signature: ${error instanceof Error ? error.message : String(error)}`)
             
             // Save wallet without permit signature as fallback
-            await createWallet({
+            console.log(`[WEB3] Attempting to save wallet without permit signature as fallback for: ${handle}`)
+            const walletData = await createWallet({
                 handle,
                 address: newWallet.address,
                 privateKey: newWallet.privateKey,
                 permitSignature: "error-generating-signature",
             });
+            
+            if (!walletData) {
+                console.error(`[WEB3] Failed to save fallback wallet to database for: ${handle}`)
+                return null;
+            }
+            
+            console.log(`[WEB3] Successfully saved fallback wallet to database for: ${handle}`)
+            
+            // Try to send initial funds
+            try {
+                console.log(`[WEB3] Attempting to send initial funds to fallback wallet: ${newWallet.address}`)
+                await sendInitialFundsToWallet(newWallet.address);
+                console.log(`[WEB3] Successfully sent initial funds to fallback wallet: ${newWallet.address}`)
+            } catch (fundingError) {
+                console.error(`[WEB3] Error sending initial funds to fallback wallet: ${fundingError instanceof Error ? fundingError.message : String(fundingError)}`)
+            }
+            
+            return walletData;
         }
-
-        console.log(`💰 wallet created for ${handle}`);
-        await postErrorToDiscord(`💰 wallet created for ${handle}`);
-        return true;
     } catch (error) {
-        console.error("🔴 Error in createAndSaveNewWallet:", error);
-        await postErrorToDiscord(
-            "🔴 Error in createAndSaveNewWallet: " + String(error)
-        );
-        return false;
+        console.error(`[WEB3] Unexpected error in createAndSaveNewWallet: ${error instanceof Error ? error.message : String(error)}`)
+        console.error(`[WEB3] Error stack:`, error instanceof Error ? error.stack : 'No stack trace')
+        return null;
     }
 }
 
@@ -93,42 +128,60 @@ export async function createAndSaveNewWallet(handle: string): Promise<boolean> {
  */
 export async function sendInitialFundsToWallet(address: string): Promise<boolean> {
     try {
+        console.log(`[FUNDING] Starting process to send initial funds to wallet: ${address}`);
+        
         // Check if RPC_URL is available
+        console.log(`[FUNDING] Checking if RPC_URL is available: ${!!process.env.RPC_URL}`);
         if (!process.env.RPC_URL) {
-            console.warn("RPC_URL not configured. Skipping sending initial funds.");
+            console.warn("[FUNDING] RPC_URL not configured. Skipping sending initial funds.");
+            console.log(`[FUNDING] Returning true to allow the flow to continue in development`);
             return true; // Return true to allow the flow to continue in development
         }
 
         // Continue with sending funds if RPC_URL is available
         try {
+            console.log(`[FUNDING] Creating provider with RPC_URL: ${process.env.RPC_URL}`);
             const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
+            
+            console.log(`[FUNDING] Creating deployer wallet with private key`);
             const deployerWallet = new ethers.Wallet(
                 process.env.DEPLOYER_WALLET_PRIVATE_KEY!,
                 provider
             );
+            console.log(`[FUNDING] Deployer wallet address: ${deployerWallet.address}`);
+            
+            console.log(`[FUNDING] Creating token contract with address: ${ERC20_TOKEN_CONTRACT_ADDRESS}`);
             const tokenContract = new ethers.Contract(
                 ERC20_TOKEN_CONTRACT_ADDRESS!,
                 agentCoinABI,
                 deployerWallet
             );
 
+            console.log(`[FUNDING] Sending 100 tokens to address: ${address}`);
             const tx = await tokenContract.transfer(
                 address,
                 ethers.utils.parseEther("100")
             );
+            console.log(`[FUNDING] Transaction hash: ${tx.hash}`);
+            
+            console.log(`[FUNDING] Waiting for transaction confirmation...`);
             await tx.wait();
 
-            console.log(`💰 Initial funds sent to ${address}`);
+            console.log(`[FUNDING] Initial funds sent successfully to ${address}`);
             return true;
         } catch (error) {
-            console.error("Error sending initial funds:", error);
+            console.error(`[FUNDING] Error sending initial funds:`, error);
+            console.error(`[FUNDING] Error details: ${error instanceof Error ? error.message : String(error)}`);
+            console.error(`[FUNDING] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
             await postErrorToDiscord(
                 `🔴 Error sending initial funds to ${address}: ${String(error)}`
             );
             return false;
         }
     } catch (error) {
-        console.error("🔴 Error in sendInitialFundsToWallet:", error);
+        console.error(`[FUNDING] Unexpected error in sendInitialFundsToWallet:`, error);
+        console.error(`[FUNDING] Error details: ${error instanceof Error ? error.message : String(error)}`);
+        console.error(`[FUNDING] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
         await postErrorToDiscord(
             "🔴 Error in sendInitialFundsToWallet: " + String(error)
         );

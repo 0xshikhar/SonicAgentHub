@@ -654,8 +654,7 @@ export async function saveIRLTweets({
             handle,
             content: tweet.full_text || tweet.text,
             posted_at: tweet.tweet_created_at,
-            // Store additional tweet data in the extra_data column
-            extra_data: JSON.stringify(tweet),
+            // Remove extra_data field as it doesn't exist in the table
             created_at: new Date().toISOString()
         }))
         
@@ -670,41 +669,39 @@ export async function saveIRLTweets({
             return false
         }
         
-        // Save metadata about this batch of tweets as an action event
-        if (Object.keys(metadata).length > 0) {
+        console.log(`✅ saveIRLTweets: Successfully saved ${data.length} tweets for ${handle}`)
+        
+        // Save metadata about the tweet collection as an action event
+        try {
             console.log(`🔄 saveIRLTweets: Saving tweet collection metadata for ${handle}`)
-            
-            const { error: metadataError } = await supabase
-                .from('agent_chain_action_events')
-                .insert({
-                    top_level_type: 'individual',
-                    action_type: 'tweets_collection_saved',
-                    main_output: `Saved ${tweets.length} tweets for @${handle}`,
-                    from_handle: handle,
-                    to_handle: null,
-                    story_context: null,
-                    extra_data: JSON.stringify({
-                        tweet_count: tweets.length,
-                        tweet_ids: tweets.map(t => t.id_str),
-                        collection_metadata: metadata,
-                        saved_at: new Date().toISOString()
-                    }),
-                    created_at: new Date().toISOString()
-                })
-                
-            if (metadataError) {
-                console.error(`⚠️ saveIRLTweets: Error saving tweet collection metadata:`, metadataError)
-                // Continue even if metadata saving fails
-            } else {
-                console.log(`✅ saveIRLTweets: Successfully saved tweet collection metadata for ${handle}`)
+            const actionEvent: ActionEvent = {
+                from_handle: handle,
+                action_type: 'tweets_collection_saved',
+                main_output: `Saved ${tweets.length} tweets for @${handle}`,
+                extra_data: JSON.stringify({
+                    count: tweets.length,
+                    first_tweet_id: tweets[0]?.id_str,
+                    last_tweet_id: tweets[tweets.length - 1]?.id_str,
+                    saved_at: new Date().toISOString(),
+                    ...metadata
+                }),
+                top_level_type: 'individual',
+                story_context: null,
+                to_handle: null,
+                created_at: new Date()
             }
+            
+            await saveNewActionEvent(actionEvent)
+            console.log(`✅ saveIRLTweets: Successfully saved tweet collection metadata for ${handle}`)
+        } catch (metadataError) {
+            console.error(`⚠️ saveIRLTweets: Error saving tweet collection metadata:`, metadataError)
+            // Continue even if metadata saving fails
         }
         
-        console.log(`✅ saveIRLTweets: Successfully saved ${tweets.length} tweets for ${handle}`)
-        console.log(`✅ saveIRLTweets: Response data:`, { count: data?.length || 0 })
         return true
     } catch (error) {
-        console.error(`❌ saveIRLTweets: Unexpected error:`, error)
+        console.error(`❌ saveIRLTweets: Unexpected error in saveIRLTweets: ${error instanceof Error ? error.message : String(error)}`)
+        console.error(`❌ saveIRLTweets: Error stack:`, error instanceof Error ? error.stack : 'No stack trace')
         return false
     }
 }
@@ -713,30 +710,46 @@ export async function saveIRLTweets({
 export async function getWalletByHandle(handle: string) {
     try {
         handle = cleanHandle(handle)
+        console.log(`[DB GET WALLET] Starting wallet retrieval for handle: ${handle}`)
         
         // Use the appropriate Supabase client based on context
         let supabase;
         try {
+            console.log(`[DB GET WALLET] Attempting to create server Supabase client`)
             supabase = await createServerSupabaseClient()
+            console.log(`[DB GET WALLET] Successfully created server Supabase client`)
         } catch (error) {
             // If createServerSupabaseClient fails (e.g., in API routes), use the API client
+            console.log(`[DB GET WALLET] Failed to create server Supabase client, falling back to API client`)
             supabase = createApiSupabaseClient()
+            console.log(`[DB GET WALLET] Successfully created API Supabase client`)
         }
         
+        console.log(`[DB GET WALLET] Querying agent_chain_wallets table for handle: ${handle}`)
         const { data, error } = await supabase
             .from('agent_chain_wallets')
             .select('*')
             .eq('handle', handle)
             .single()
         
+        console.log(`[DB GET WALLET] Query result:`, data, error)
+        
         if (error) {
-            console.error("Error in getWalletByHandle:", error)
+            console.error(`[DB GET WALLET] Error retrieving wallet: ${error.message}`)
+            console.error(`[DB GET WALLET] Error details:`, error)
             return null
+        }
+        
+        if (data) {
+            console.log(`[DB GET WALLET] Successfully retrieved wallet for ${handle} with address: ${data.address}`)
+        } else {
+            console.log(`[DB GET WALLET] No wallet found for handle: ${handle}`)
         }
         
         return data
     } catch (error) {
-        console.error("Error in getWalletByHandle:", error)
+        console.error(`[DB GET WALLET] Unexpected error in getWalletByHandle: ${error instanceof Error ? error.message : String(error)}`)
+        console.error(`[DB GET WALLET] Error stack:`, error instanceof Error ? error.stack : 'No stack trace')
         return null
     }
 }
@@ -754,34 +767,71 @@ export async function createWallet({
 }) {
     try {
         handle = cleanHandle(handle)
+        console.log(`[DB WALLET] Creating wallet for handle: ${handle} with address: ${address}`)
         
         // Use the appropriate Supabase client based on context
         let supabase;
         try {
+            console.log(`[DB WALLET] Attempting to create action Supabase client`)
             supabase = await createActionSupabaseClient()
+            console.log(`[DB WALLET] Successfully created action Supabase client`)
         } catch (error) {
             // If createActionSupabaseClient fails (e.g., in API routes), use the API client
+            console.log(`[DB WALLET] Failed to create action Supabase client, falling back to API client`)
             supabase = createApiSupabaseClient()
+            console.log(`[DB WALLET] Successfully created API Supabase client`)
         }
         
-        const { error } = await supabase
+        // First check if wallet already exists to avoid duplicate errors
+        console.log(`[DB WALLET] Checking if wallet already exists for handle: ${handle}`)
+        const { data: existingWallet, error: checkError } = await supabase
+            .from('agent_chain_wallets')
+            .select('*')
+            .eq('handle', handle)
+            .maybeSingle()
+            
+        if (checkError) {
+            console.error(`[DB WALLET] Error checking for existing wallet: ${checkError.message}`)
+            return null
+        }
+        
+        if (existingWallet) {
+            console.log(`[DB WALLET] Wallet already exists for handle: ${handle} with address: ${existingWallet.address}`)
+            return existingWallet
+        }
+        
+        console.log(`[DB WALLET] No existing wallet found, creating new wallet for handle: ${handle}`)
+        
+        // Insert the wallet
+        const { data, error } = await supabase
             .from('agent_chain_wallets')
             .insert({
                 handle,
                 address,
                 private_key: privateKey,
-                permit_signature: permitSignature,
+                permit_signature: permitSignature
             })
-        
+            .select()
+            .single()
+            
         if (error) {
-            console.error("Error in createWallet:", error)
-            return false
+            console.error(`[DB WALLET] Error creating wallet: ${error.message}`)
+            console.error(`[DB WALLET] Error details:`, error)
+            return null
         }
         
-        return true
+        console.log(`[DB WALLET] Successfully created wallet for handle: ${handle} with address: ${address}`)
+        console.log(`[DB WALLET] Wallet data:`, {
+            handle: data.handle,
+            address: data.address,
+            created_at: data.created_at
+        })
+        
+        return data
     } catch (error) {
-        console.error("Error in createWallet:", error)
-        return false
+        console.error(`[DB WALLET] Unexpected error in createWallet: ${error instanceof Error ? error.message : String(error)}`)
+        console.error(`[DB WALLET] Error stack:`, error instanceof Error ? error.stack : 'No stack trace')
+        return null
     }
 }
 
