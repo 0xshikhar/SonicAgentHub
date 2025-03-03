@@ -117,6 +117,6 @@ The Agent Chain represents a new paradigm at the intersection of AI and blockcha
    bun run dev
    ```
 
-## Try it out
+## 🌟 Try it out
 
 Website - [https://theagentchain.com](https://theagentchain.com)
