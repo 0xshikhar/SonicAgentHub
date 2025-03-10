@@ -1,12 +1,12 @@
-# The Agent Chain
+# SonicAgents Hub
 
 ## 💡 Inspiration
 
-The Agent Chain was born from a vision to bridge the gap between AI agents and blockchain technology. We were inspired by the potential of autonomous AI entities that could not only interact with users but also operate with their own on-chain identities and wallets. The rise of AI agents like ChatGPT and the growing adoption of web3 technologies created the perfect opportunity to build a platform where these two revolutionary technologies could converge.
+SonicAgents Hub was born from a vision to bridge the gap between AI agents and blockchain technology. We were inspired by the potential of autonomous AI entities that could not only interact with users but also operate with their own on-chain identities and wallets. The rise of AI agents like ChatGPT and the growing adoption of web3 technologies created the perfect opportunity to build a platform where these two revolutionary technologies could converge.
 
 ## 📡 Deployed Contracts
 
-### The Agent Chain contracts (mainnet) 
+### SonicAgents Hub contracts (mainnet) 
 
 AGENT Token - [0x60A9BA1fA83470E34217C55D65CFc8f5d66F45d0](https://explorer.0x4e454170.aurora-cloud.dev/address/0x60A9BA1fA83470E34217C55D65CFc8f5d66F45d0)
 
@@ -20,7 +20,7 @@ AgentNFT Collection - [0x1B4AcaBA13f8B3B858c0796A7d62FC35A5ED3BA5](https://explo
 
 ## ⛓️ Chain Configuration
 
-The Agent Chain is built on top of Aurora Mainnet.
+SonicAgents Hub is built on top of Aurora Mainnet.
 
 | Detail            | Value                                         |
 |-------------------|-----------------------------------------------|
@@ -35,7 +35,7 @@ The Agent Chain is built on top of Aurora Mainnet.
 
 ## 🤖 What it does
 
-The Agent Chain is a blockchain on top of **Aurora Chain (Near)** that enables users to create and interact with AI agents that have their own on-chain and off-chain identities. These agents can:
+SonicAgents Hub is a blockchain on top of **Aurora Chain (Near)** that enables users to create and interact with AI agents that have their own on-chain and off-chain identities. These agents can:
 
 - Be created from Twitter profiles or custom character descriptions
 - Maintain their own crypto wallets and token balances
@@ -49,13 +49,13 @@ The platform features a sleek, intuitive interface where users can browse availa
 
 ## 🛠️ How we built it
 
-We built The Agent Chain using a modern tech stack:
+We built SonicAgents Hub using a modern tech stack:
 
 - **Frontend**: Next.js 14 with App Router for server components, React for client components, and Tailwind CSS with Shadcn UI for styling
 - **Backend**: Next.js API routes for serverless functions
 - **Database**: Supabase for user data, agent profiles, and conversation history
 - **AI**: Integration with advanced language models like Gemini & OpenAI for agent personality generation and conversation
-- **Blockchain**: Integration with Aurora testnet and The Agent Chain Mainnet for on-chain wallets and transactions
+- **Blockchain**: Integration with Aurora testnet and SonicAgents Hub Mainnet for on-chain wallets and transactions
 - **Authentication**: Secure wallet-based authentication
 - **State Management**: React Context and Server Components for efficient state handling
 - **Styling**: Tailwind CSS with custom animations and Shadcn UI components
@@ -64,7 +64,7 @@ We implemented a sophisticated agent training pipeline that analyzes source data
 
 ## 🤔 Challenges we ran into
 
-Building The Agent Chain presented several significant challenges:
+Building SonicAgents Hub presented several significant challenges:
 
 1. **Agent Personality Generation**: Creating unique, consistent agent personalities that maintained coherence across conversations required sophisticated prompt engineering and multiple iterations.
 2. **On-chain Integration**: Seamlessly connecting AI agents with blockchain wallets while maintaining security and user privacy was technically complex.
@@ -73,9 +73,9 @@ Building The Agent Chain presented several significant challenges:
 5. **User Experience**: Creating an intuitive interface for both crypto-native users and those new to web3 required balancing complexity with accessibility.
 6. **Agent Training**: Developing a training pipeline that could generate rich, nuanced agent personalities from limited source data was particularly challenging.
 
-## 🔮 What's next for The Agent Chain
+## 🔮 What's next for SonicAgents Hub
 
-The Agent Chain is just getting started. Our roadmap includes:
+SonicAgents Hub is just getting started. Our roadmap includes:
 
 1. **Multi-chain Support**: Creating agents that interact with multiple chains and do settlements on our chain, Aurora/Agent Chain.
 2. **Agent Marketplace**: Creating a marketplace where users can discover, trade, and customize AI agents.
@@ -85,7 +85,7 @@ The Agent Chain is just getting started. Our roadmap includes:
 6. **Agent Staking and Rewards**: Creating economic incentives for agent creators and users through staking and reward mechanisms.
 7. **Enterprise Solutions**: Developing enterprise-grade solutions for businesses looking to leverage AI agents for customer service, marketing, and operations.
 
-The Agent Chain represents a new paradigm at the intersection of AI and blockchain, and we're excited to continue pushing the boundaries of what's possible in this space with the help of Aurora Chain & Near blockchain. 
+SonicAgents Hub represents a new paradigm at the intersection of AI and blockchain, and we're excited to continue pushing the boundaries of what's possible in this space with the help of Aurora Chain & Near blockchain. 
 
 ## 🛠️ Development
 

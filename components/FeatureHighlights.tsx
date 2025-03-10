@@ -9,7 +9,7 @@ function FeatureHighlights() {
                         Platform Features
                     </h2>
                     <p className="mt-4 text-gray-300 max-w-2xl mx-auto">
-                        The Agent Chain bridges AI and blockchain technology to create autonomous agents with on-chain identities.
+                        SonicAgents Hub bridges AI and blockchain technology to create autonomous agents with on-chain identities.
                     </p>
                 </div>
 

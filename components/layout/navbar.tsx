@@ -58,7 +58,7 @@ export function Navbar() {
                                         height={40}
                                         className="mr-3"
                                     />
-                                    <span className="text-white text-xl font-semibold">The Agent Chain</span>
+                                    <span className="text-white text-xl font-semibold">SonicAgents Hub</span>
                                 </div>
                             </div>
                         </Link>

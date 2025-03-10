@@ -14,30 +14,29 @@ import {
 import 'dotenv/config'
 
 import {
-    aurora,
-    auroraTestnet,
+    sonicBlazeTestnet,
+    sonic, 
+    sepolia
 } from 'wagmi/chains';
-
-import { agentChain } from '@/lib/agentChain';
 import { WalletAuthProvider } from '@/components/WalletAuthProvider';
 
 
 const config = getDefaultConfig({
-    appName: 'The Agent Chain',
+    appName: 'SonicAgents Hub',
     projectId: '9811958bd307518b364ff7178034c435',
-    chains: [aurora, auroraTestnet, agentChain],
+    chains: [sonicBlazeTestnet, sonic, sepolia],
     ssr: true, // If your dApp uses server side rendering (SSR)
 });
 
 const projectId = '9811958bd307518b364ff7178034c435';
 
 const { wallets } = getDefaultWallets({
-    appName: 'The Agent Chain',
+    appName: 'SonicAgents Hub',
     projectId,
 });
 
 const demoAppInfo = {
-    appName: 'The Agent Chain',
+    appName: 'SonicAgents Hub',
 };
 
 const queryClient = new QueryClient();

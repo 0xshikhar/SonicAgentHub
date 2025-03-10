@@ -1,6 +1,6 @@
 # Supabase Setup Guide
 
-This guide will help you set up the required tables in your Supabase database for the Agent chain platform.
+This guide will help you set up the required tables in your Supabase database for SonicAgents Hub platform.
 
 ## Issue: Missing `agent_chain_general_agents` Table
 
@@ -111,7 +111,7 @@ We've simplified the RLS policies to avoid type casting issues between UUID and 
 
 # PostgreSQL to Supabase Migration
 
-This document explains the migration from direct PostgreSQL queries to Supabase client in the Agent Chain platform.
+This document explains the migration from direct PostgreSQL queries to Supabase client in SonicAgents Hub platform.
 
 ## Overview
 
