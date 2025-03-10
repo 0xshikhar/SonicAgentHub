@@ -8,34 +8,34 @@ SonicAgents Hub was born from a vision to bridge the gap between AI agents and b
 
 ### SonicAgents Hub contracts (mainnet) 
 
-AGENT Token - [0x60A9BA1fA83470E34217C55D65CFc8f5d66F45d0](https://explorer.0x4e454170.aurora-cloud.dev/address/0x60A9BA1fA83470E34217C55D65CFc8f5d66F45d0)
+AGENT Token - [0x60A9BA1fA83470E34217C55D65CFc8f5d66F45d0](https://explorer.0x4e454170.sonic-cloud.dev/address/0x60A9BA1fA83470E34217C55D65CFc8f5d66F45d0)
 
-AgentNFT Collection - [0xFEDb8bc182Eb92c36dFc854ad566b9F6EF91B9B3](https://explorer.0x4e454170.aurora-cloud.dev/address/0xFEDb8bc182Eb92c36dFc854ad566b9F6EF91B9B3)
+AgentNFT Collection - [0xFEDb8bc182Eb92c36dFc854ad566b9F6EF91B9B3](https://explorer.0x4e454170.sonic-cloud.dev/address/0xFEDb8bc182Eb92c36dFc854ad566b9F6EF91B9B3)
 
-### Aurora contracts (testnet)
+### Sonic contracts (testnet)
 
-AGENT Token - [0x419cFe85e77a0A26B9989059057318F59764F7C5](https://explorer.testnet.aurora.dev/token/0x419cFe85e77a0A26B9989059057318F59764F7C5)
+AGENT Token - [0x419cFe85e77a0A26B9989059057318F59764F7C5](https://explorer.testnet.sonic.dev/token/0x419cFe85e77a0A26B9989059057318F59764F7C5)
 
-AgentNFT Collection - [0x1B4AcaBA13f8B3B858c0796A7d62FC35A5ED3BA5](https://explorer.testnet.aurora.dev/token/0x1B4AcaBA13f8B3B858c0796A7d62FC35A5ED3BA5)
+AgentNFT Collection - [0x1B4AcaBA13f8B3B858c0796A7d62FC35A5ED3BA5](https://explorer.testnet.sonic.dev/token/0x1B4AcaBA13f8B3B858c0796A7d62FC35A5ED3BA5)
 
 ## ⛓️ Chain Configuration
 
-SonicAgents Hub is built on top of Aurora Mainnet.
+SonicAgents Hub is built on top of Sonic Mainnet.
 
 | Detail            | Value                                         |
 |-------------------|-----------------------------------------------|
 | Network           | Public                                        |
 | Chain ID          | 1313161584                                   |
 | Genesis           | 138363672                                    |
-| Engine account     | 0x4e454170.c.aurora                          |
+| Engine account     | 0x4e454170.c.sonic                          |
 | Engine version    | 3.7.0                                        |
-| RPC URL           | [https://rpc-0x4e454170.aurora-cloud.dev](https://rpc-0x4e454170.aurora-cloud.dev) |
-| Explorer          | [https://explorer.0x4e454170.aurora-cloud.dev](https://explorer.0x4e454170.aurora-cloud.dev) |
+| RPC URL           | [https://rpc-0x4e454170.sonic-cloud.dev](https://rpc-0x4e454170.sonic-cloud.dev) |
+| Explorer          | [https://explorer.0x4e454170.sonic-cloud.dev](https://explorer.0x4e454170.sonic-cloud.dev) |
 
 
 ## 🤖 What it does
 
-SonicAgents Hub is a blockchain on top of **Aurora Chain (Near)** that enables users to create and interact with AI agents that have their own on-chain and off-chain identities. These agents can:
+SonicAgents Hub is a blockchain on top of **Sonic Chain (Near)** that enables users to create and interact with AI agents that have their own on-chain and off-chain identities. These agents can:
 
 - Be created from Twitter profiles or custom character descriptions
 - Maintain their own crypto wallets and token balances
@@ -55,7 +55,7 @@ We built SonicAgents Hub using a modern tech stack:
 - **Backend**: Next.js API routes for serverless functions
 - **Database**: Supabase for user data, agent profiles, and conversation history
 - **AI**: Integration with advanced language models like Gemini & OpenAI for agent personality generation and conversation
-- **Blockchain**: Integration with Aurora testnet and SonicAgents Hub Mainnet for on-chain wallets and transactions
+- **Blockchain**: Integration with Sonic testnet and SonicAgents Hub Mainnet for on-chain wallets and transactions
 - **Authentication**: Secure wallet-based authentication
 - **State Management**: React Context and Server Components for efficient state handling
 - **Styling**: Tailwind CSS with custom animations and Shadcn UI components
@@ -77,7 +77,7 @@ Building SonicAgents Hub presented several significant challenges:
 
 SonicAgents Hub is just getting started. Our roadmap includes:
 
-1. **Multi-chain Support**: Creating agents that interact with multiple chains and do settlements on our chain, Aurora/Agent Chain.
+1. **Multi-chain Support**: Creating agents that interact with multiple chains and do settlements on our chain, Sonic/Agent Chain.
 2. **Agent Marketplace**: Creating a marketplace where users can discover, trade, and customize AI agents.
 3. **Agent-to-Agent Interactions**: Enabling autonomous interactions between agents, creating a vibrant ecosystem of AI entities.
 4. **Advanced Training Options**: Implementing more sophisticated training methods for creating even more nuanced agent personalities.
@@ -85,7 +85,7 @@ SonicAgents Hub is just getting started. Our roadmap includes:
 6. **Agent Staking and Rewards**: Creating economic incentives for agent creators and users through staking and reward mechanisms.
 7. **Enterprise Solutions**: Developing enterprise-grade solutions for businesses looking to leverage AI agents for customer service, marketing, and operations.
 
-SonicAgents Hub represents a new paradigm at the intersection of AI and blockchain, and we're excited to continue pushing the boundaries of what's possible in this space with the help of Aurora Chain & Near blockchain. 
+SonicAgents Hub represents a new paradigm at the intersection of AI and blockchain, and we're excited to continue pushing the boundaries of what's possible in this space with the help of Sonic Chain & Near blockchain. 
 
 ## 🛠️ Development
 

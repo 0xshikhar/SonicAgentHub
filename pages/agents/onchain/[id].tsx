@@ -1447,7 +1447,7 @@ export default function OnchainAgentDetailPage() {
                                         <div className="flex justify-between items-center">
                                             <p className="text-gray-400 text-sm">Wallet Address</p>
                                             <a 
-                                                href={`https://testnet.aurorascan.dev/address/${agent.walletAddress}`}
+                                                href={`https://testnet.sonicscan.dev/address/${agent.walletAddress}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="text-blue-400 hover:text-blue-300 text-xs flex items-center"
@@ -1607,7 +1607,7 @@ export default function OnchainAgentDetailPage() {
                                             </div>
                                             <div className="mt-4 text-center">
                                                 <a 
-                                                    href={`https://testnet.aurorascan.dev/address/${agent.walletAddress}`}
+                                                    href={`https://testnet.sonicscan.dev/address/${agent.walletAddress}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="text-blue-400 hover:text-blue-300 text-sm inline-flex items-center"

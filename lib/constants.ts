@@ -1,6 +1,6 @@
 import { Agent } from './types';
 
-// opensea does not suppore aurora testnet & agent chain 
+// opensea does not suppore sonic testnet & agent chain 
 export const OPENSEA_NFT_COLLECTION_URL =
     "https://testnets.opensea.io/collection/0x1B4AcaBA13f8B3B858c0796A7d62FC35A5ED3BA5";
 
@@ -8,7 +8,7 @@ export const OPENSEA_NFT_COLLECTION_URL =
 export const DEPLOYER_WALLET_ADDRESS =
     "0x1B4AcaBA13f8B3B858c0796A7d62FC35A5ED3BA5";
 
-// * AGENT token contract address on aurora testnet:
+// * AGENT token contract address on sonic testnet:
 export const ERC20_TOKEN_CONTRACT_ADDRESS =
     "0x419cFe85e77a0A26B9989059057318F59764F7C5";
 

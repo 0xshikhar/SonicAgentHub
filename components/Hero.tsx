@@ -107,20 +107,20 @@ const HeroSection = () => {
                         {/* Trusted by section */}
                         <div className="pt-12">
                             <p className="text-gray-400 text-sm mb-6 font-medium tracking-wide">
-                                Powered by Aurora Blockchain
+                                Powered by Sonic Blockchain
                             </p>
                             <div className="flex items-center space-x-4">
                                 <div className="group relative transition-all duration-300 hover:scale-110">
                                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full blur-lg group-hover:blur-xl transition-all duration-300"></div>
                                     <div className="relative h-12 w-12 bg-gray-900/80 rounded-full border border-gray-700/50 backdrop-blur-sm flex items-center justify-center shadow-lg hover:border-blue-500/50 transition-all duration-300">
-                                        {/* Aurora logo placeholder - replace with actual logo */}
+                                        {/* Sonic logo placeholder - replace with actual logo */}
                                         <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
-                                            <span className="text-white text-xs font-bold">Aurora</span>
+                                            <span className="text-white text-xs font-bold">Sonic</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="text-gray-300 text-sm">
-                                    <p>Built on Aurora testnet for secure on-chain wallets and transactions</p>
+                                    <p>Built on Sonic testnet for secure on-chain wallets and transactions</p>
                                     <p className="text-gray-400 mt-1">Multi-chain support coming soon</p>
                                 </div>
                             </div>
