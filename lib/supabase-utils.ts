@@ -73,17 +73,65 @@ export async function getActionEvents(fromHandle?: string, toHandle?: string, li
     return data
 }
 
-// Smol tweets related functions
-export async function createSmolTweet(tweetData: TablesInsert<'agent_chain_smol_tweets'>) {
-    const supabase = await createActionSupabaseClient()
-    const { data, error } = await supabase
-        .from('agent_chain_smol_tweets')
-        .insert(tweetData)
-        .select()
-        .single()
+// // Smol tweets related functions
+// export async function createSmolTweet(tweetData: TablesInsert<'agent_chain_smol_tweets'>) {
+//     const supabase = await createActionSupabaseClient()
+//     const { data, error } = await supabase
+//         .from('agent_chain_smol_tweets')
+//         .insert(tweetData)
+//         .select()
+//         .single()
 
-    if (error) throw new Error(`Error creating smol tweet: ${error.message}`)
-    return data
+//     if (error) throw new Error(`Error creating smol tweet: ${error.message}`)
+//     return data
+// }
+export async function createSmolTweet(
+    handle: string,
+    content: string,
+    actionId?: string | null, // Make sure actionId is optional
+    actionType: string = "TWEET", // Default action type
+    imageUrl?: string,
+    link?: string,
+    linkTitle?: string,
+    linkPreviewImgUrl?: string
+) {
+    const supabase = await createActionSupabaseClient()
+    try {
+        // First, verify that if actionId is provided, it exists in action_events
+        if (actionId) {
+            const { data: actionExists } = await supabase
+                .from('agent_chain_action_events')
+                .select('id')
+                .eq('id', actionId)
+                .single();
+
+            if (!actionExists) {
+                console.log(`Action ID ${actionId} does not exist, creating tweet without action reference`);
+                actionId = null; // Set to null if not found 
+            }
+        }
+
+        // Now create the tweet with null actionId if it wasn't valid
+        const { data, error } = await supabase
+            .from('agent_chain_smol_tweets')
+            .insert({
+                handle,
+                content,
+                action_id: actionId || null, // Use null if actionId is falsy
+                action_type: actionType,
+                image_url: imageUrl || null,
+                link: link || null,
+                link_title: linkTitle || null,
+                link_preview_img_url: linkPreviewImgUrl || null,
+            })
+            .select();
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error("Error creating smol tweet:", error);
+        throw new Error(`Error creating smol tweet: ${error}`);
+    }
 }
 
 export async function getSmolTweets(handle?: string, limit = 20) {
@@ -172,9 +220,9 @@ export async function getOrCreateEndUser(address: string) {
     const supabaseClient = typeof window === 'undefined'
         ? await createServerSupabaseClient()
         : await createActionSupabaseClient()
-    
+
     console.log(`Attempting to get or create end user with address: ${address}`)
-    
+
     // First check if end user exists
     const { data: existingUser, error: fetchError } = await supabaseClient
         .from('agent_chain_end_users')
@@ -195,7 +243,7 @@ export async function getOrCreateEndUser(address: string) {
     }
 
     console.log(`Creating new end user with address: ${address}`)
-    
+
     // If not, create a new end user
     const userData: TablesInsert<'agent_chain_end_users'> = {
         address,
@@ -212,7 +260,7 @@ export async function getOrCreateEndUser(address: string) {
         console.error(`Error creating end user: ${error.message}`, error)
         throw new Error(`Error creating end user: ${error.message}`)
     }
-    
+
     console.log(`Successfully created end user with address: ${address}`, data)
     return data
 }

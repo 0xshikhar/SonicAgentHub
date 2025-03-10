@@ -71,11 +71,21 @@ export const createServerSupabaseClient = async () => {
         const serviceClient = getServiceRoleClient()
         if (serviceClient) return serviceClient
 
-        // Dynamic imports to avoid Next.js errors
-        const { createServerComponentClient } = await import('@supabase/auth-helpers-nextjs')
-        const { cookies } = await import('next/headers')
-
-        return createServerComponentClient<Database>({ cookies })
+        // Check if we're in a context where cookies are available
+        try {
+            // Dynamic imports to avoid Next.js errors
+            const { createServerComponentClient } = await import('@supabase/auth-helpers-nextjs')
+            const { cookies } = await import('next/headers')
+            
+            // Try to access cookies to see if we're in a request context
+            cookies()
+            
+            return createServerComponentClient<Database>({ cookies })
+        } catch (cookieError) {
+            // If cookies() fails, we're outside a request context
+            console.log('Not in a request context, falling back to regular client')
+            return supabase()
+        }
     } catch (error) {
         console.error('Server component client error:', error)
         return supabase()
@@ -89,11 +99,21 @@ export const createActionSupabaseClient = async () => {
         const serviceClient = getServiceRoleClient()
         if (serviceClient) return serviceClient
 
-        // Dynamic imports to avoid Next.js errors
-        const { createServerActionClient } = await import('@supabase/auth-helpers-nextjs')
-        const { cookies } = await import('next/headers')
-
-        return createServerActionClient<Database>({ cookies })
+        // Check if we're in a context where cookies are available
+        try {
+            // Dynamic imports to avoid Next.js errors
+            const { createServerActionClient } = await import('@supabase/auth-helpers-nextjs')
+            const { cookies } = await import('next/headers')
+            
+            // Try to access cookies to see if we're in a request context
+            cookies()
+            
+            return createServerActionClient<Database>({ cookies })
+        } catch (cookieError) {
+            // If cookies() fails, we're outside a request context
+            console.log('Not in a request context, falling back to regular client')
+            return supabase()
+        }
     } catch (error) {
         console.error('Server action client error:', error)
         return supabase()

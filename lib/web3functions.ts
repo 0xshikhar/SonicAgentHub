@@ -515,29 +515,64 @@ export async function getWalletByHandleForPages(handle: string) {
         handle = cleanHandle(handle)
         console.log(`[PAGES GET WALLET] Starting wallet retrieval for handle: ${handle}`)
         
-        console.log(`[PAGES GET WALLET] Querying agent_chain_wallets table for handle: ${handle}`)
-        const { data, error } = await supabase()
-        .from('agent_chain_wallets')
-        .select('*')
-        .eq('handle', handle)
-        .single()
+        // Log the Supabase client being used
+        const supabaseClient = supabase()
+        console.log(`[PAGES GET WALLET] Supabase client initialized:`, 
+            supabaseClient ? 'Success' : 'Failed')
         
-        console.log(`[PAGES GET WALLET] Query result:`, data, error)
+        // Check if the agent_chain_wallets table exists
+        console.log(`[PAGES GET WALLET] Checking if agent_chain_wallets table exists`)
+        const { data: tableCheck, error: tableError } = await supabaseClient
+            .from('agent_chain_wallets')
+            .select('count', { count: 'exact', head: true })
+        
+        if (tableError) {
+            console.error(`[PAGES GET WALLET] Error checking table:`, tableError)
+        } else {
+            console.log(`[PAGES GET WALLET] Table check result:`, tableCheck)
+        }
+        
+        console.log(`[PAGES GET WALLET] Querying agent_chain_wallets table for handle: ${handle}`)
+        const { data, error } = await supabaseClient
+            .from('agent_chain_wallets')
+            .select('*')
+            .eq('handle', handle)
+            .single()
+        
+        // Log the full query result for debugging
+        console.log(`[PAGES GET WALLET] Query result data:`, data)
+        if (error) {
+            console.error(`[PAGES GET WALLET] Query error:`, error)
+        }
         
         if (error) {
             console.error(`[PAGES GET WALLET] Error retrieving wallet:`, error)
+            
+            // Check if it's a "not found" error
+            if (error.code === 'PGRST116') {
+                console.log(`[PAGES GET WALLET] No wallet found for handle: ${handle}`)
+            }
+            
             return null
         }
         
         if (data) {
             console.log(`[PAGES GET WALLET] Successfully retrieved wallet for ${handle} with address: ${data.address}`)
+            // Log wallet data structure (without exposing private key)
+            console.log(`[PAGES GET WALLET] Wallet data structure:`, {
+                handle: data.handle,
+                address: data.address,
+                has_private_key: Boolean(data.private_key),
+                has_permit_signature: Boolean(data.permit_signature),
+                created_at: data.created_at
+            })
         } else {
             console.log(`[PAGES GET WALLET] No wallet found for handle: ${handle}`)
         }
         
         return data
     } catch (error) {
-        console.error(`[PAGES GET WALLET] Unexpected error in getWalletByHandleForPages: ${error instanceof Error ? error.message : String(error)}`)
+        console.error(`[PAGES GET WALLET] Unexpected error in getWalletByHandleForPages:`, error)
         console.error(`[PAGES GET WALLET] Error stack:`, error instanceof Error ? error.stack : 'No stack trace')
         return null
     }
