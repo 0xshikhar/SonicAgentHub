@@ -33,6 +33,10 @@ interface ExtendedAgent extends Agent {
     handle?: string
 }
 
+interface CustomError extends Error {
+    details?: string // Optional details property
+}
+
 export default function AgentDetailPage() {
     const router = useRouter()
     const { id } = router.query
@@ -52,8 +56,14 @@ export default function AgentDetailPage() {
             try {
                 setIsLoading(true)
                 
+                if (!id) return;
+                
+                // Use the ID directly from the URL - this is the handle in our database
+                const agentId = id as string;
+                console.log(`Fetching agent details for handle: ${agentId}`);
+                
                 // First check if it's a static agent
-                const staticAgent = staticAgents.find(a => a.id === id)
+                const staticAgent = staticAgents.find(a => a.id === agentId)
 
                 if (staticAgent) {
                     // Mark as local source
@@ -82,8 +92,8 @@ export default function AgentDetailPage() {
                 
                 const response = await axios.post(`${baseUrl}/api/agent-training`, {
                     action: 'getAgent',
-                    agentId: id,
-                    handle: id // Include handle as well to support lookup by handle
+                    agentId: agentId,
+                    handle: agentId // Include handle as well to support lookup by handle
                 });
 
                 if (response.data.success) {
@@ -96,7 +106,18 @@ export default function AgentDetailPage() {
                         return;
                     }
                     
-                    setAgent(agentData)
+                    // Ensure we're using the correct handle from the URL
+                    // This is critical for chat functionality
+                    const enhancedAgentData = {
+                        ...agentData,
+                        // Use the URL ID as the primary identifier for the agent
+                        // This ensures consistency between the URL and API requests
+                        id: agentId
+                    };
+                    
+                    console.log('Setting agent data with ID:', enhancedAgentData.id);
+                    setAgent(enhancedAgentData);
+                    
                     // Add system welcome message
                     setMessages([
                         {
@@ -157,14 +178,19 @@ export default function AgentDetailPage() {
             const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
             console.log(`Using base URL: ${baseUrl} for chat API request`);
             
+            // Use the agent ID directly - this is the handle in our database
+            const agentHandle = agent.id;
+            console.log(`Sending chat request for agent handle: ${agentHandle}`);
+            console.log('Full agent data:', {
+                id: agent.id,
+                name: agent.name,
+                agentType: agent.agentType,
+                source: agent.source
+            });
+            
             // Call API to get agent response
             const response = await axios.post(`${baseUrl}/api/agent-chat`, {
-                // For Twitter agents from general_agents, the ID is in format 'twitter-{handle}'
-                // For Character agents from general_agents, the ID is in format 'character-{handle}'
-                // Extract the handle part if it's a prefixed ID, otherwise use the ID as is
-                handle: agent.id.startsWith('twitter-') || agent.id.startsWith('character-') 
-                    ? agent.id.split('-')[1] 
-                    : agent.id,
+                handle: agentHandle,
                 message: inputMessage
             });
 
@@ -183,14 +209,24 @@ export default function AgentDetailPage() {
             }
         } catch (error) {
             console.error('Error getting agent response:', error)
-            showToast.error('Failed to get response from agent')
+            
+            // Extract detailed error message if available
+            let errorMessage = "I'm sorry, I'm having trouble processing your request right now. Please try again later.";
+            
+            if (error as any) {
+                console.error('API error details:', error);
+                console.log('API error details:', error);
+                // errorMessage = `Error: ${error.message}`;
+            }
+            
+            showToast.error('Failed to get response from agent');
 
             // Remove the thinking message and add an error message
             setMessages(prev => 
                 prev.filter(msg => msg.id !== thinkingMessageId).concat({
                     id: `error-${Date.now()}`,
                     role: 'assistant',
-                    content: "I'm sorry, I'm having trouble processing your request right now. Please try again later.",
+                    content: errorMessage,
                     timestamp: new Date()
                 })
             )

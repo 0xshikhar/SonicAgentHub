@@ -175,6 +175,8 @@ export default async function handler(
             })
         }
 
+        console.log(`Processing chat request for handle: ${handle}`);
+
         // Find the agent in static agents
         const staticAgent = agents.find(a => a.id === handle)
 
@@ -221,24 +223,38 @@ Keep your responses concise and focused on the user's query.`
             let generalAgent: any = null;
 
             try {
-                // First try to get by ID
-                generalAgent = await getGeneralAgent(handle);
-            } catch (error) {
-                console.log(`Agent not found by ID, trying to fetch by handle`);
+                // First try to get by handle directly
+                generalAgent = await getGeneralAgentByHandle(handle);
+                console.log(`Found agent by handle: ${handle}`);
+            } catch (handleError) {
+                console.log(`Agent not found by handle: ${handle}, trying by ID`);
 
+                // If that fails, try to get by ID
                 try {
-                    // Try with the original handle
-                    generalAgent = await getGeneralAgentByHandle(handle);
-                } catch (handleError) {
-                    console.log(`Agent not found by handle, trying with character- prefix removed`);
+                    generalAgent = await getGeneralAgent(handle);
+                    console.log(`Found agent by ID: ${handle}`);
+                } catch (idError) {
+                    console.log(`Agent not found by ID either: ${handle}`);
 
-                    // If the handle starts with "character-", try to get by the handle part
-                    if (handle && handle.startsWith('character-')) {
-                        const handlePart = handle.replace('character-', '');
-                        console.log(`Trying to fetch by handle part: ${handlePart}`);
-                        generalAgent = await getGeneralAgentByHandle(handlePart);
+                    // If the handle contains a prefix, try without it
+                    if (handle.includes('-')) {
+                        const parts = handle.split('-');
+                        if (parts.length > 1) {
+                            const simplifiedHandle = parts[parts.length - 1];
+                            console.log(`Trying simplified handle: ${simplifiedHandle}`);
+
+                            try {
+                                generalAgent = await getGeneralAgentByHandle(simplifiedHandle);
+                                console.log(`Found agent by simplified handle: ${simplifiedHandle}`);
+                            } catch (simplifiedError) {
+                                console.log(`Agent not found by simplified handle either: ${simplifiedHandle}`);
+                                throw new Error(`Agent not found with handle, ID, or simplified handle: ${handle}`);
+                            }
+                        } else {
+                            throw new Error(`Agent not found with handle or ID: ${handle}`);
+                        }
                     } else {
-                        throw handleError;
+                        throw new Error(`Agent not found with handle or ID: ${handle}`);
                     }
                 }
             }
@@ -281,25 +297,50 @@ Keep your responses concise and focused on the user's query.`
 Description: ${mappedAgent.description || 'No description available'}
 
 ${mappedAgent.agentType === 'twitter' ? `Twitter handle: @${mappedAgent.twitterHandle || mappedAgent.handle}` : ''}
+${mappedAgent.agentType === 'character' ? `Character type: Custom AI personality with unique traits and backstory` : ''}
 ${mappedAgent.traits && mappedAgent.traits.length > 0 ? `Personality traits: ${mappedAgent.traits.join(', ')}` : ''}
 ${mappedAgent.background ? `Background: ${mappedAgent.background}` : ''}
 
-When responding to messages, maintain the personality, knowledge, and communication style that would be consistent with this character. Be helpful, informative, and engaging while staying in character.
+When responding to messages, maintain the personality, knowledge, and communication style that would be consistent with this ${mappedAgent.agentType === 'twitter' ? 'Twitter profile' : 'character'}. Be helpful, informative, and engaging while staying in character.
+
+${mappedAgent.agentType === 'character' ? 'Embody the unique traits and characteristics of this character in your responses. Use a tone and style that matches the character\'s personality.' : ''}
 
 Keep your responses concise and focused on the user's query.`;
                     }
 
                     // Generate dynamic response
-                    const dynamicResponse = await generateDynamicResponse(
-                        handle,
-                        message,
-                        systemPrompt
-                    )
+                    try {
+                        const dynamicResponse = await generateDynamicResponse(
+                            handle,
+                            message,
+                            systemPrompt
+                        )
 
-                    return res.status(200).json({
-                        success: true,
-                        message: dynamicResponse,
-                    })
+                        return res.status(200).json({
+                            success: true,
+                            message: dynamicResponse,
+                        })
+                    } catch (genError) {
+                        console.error(`Error generating response for ${mappedAgent.agentType || 'unknown'} agent (${handle}):`, genError)
+                        console.log(`Falling back to mock responses for ${mappedAgent.agentType || 'unknown'} agent`)
+
+                        // Fall back to mock responses based on agent type
+                        const agentType = generalAgent.agent_type;
+                        let responsePool;
+
+                        if (agentType === 'twitter') {
+                            responsePool = mockResponses['twitter-demo'] || defaultResponses;
+                        } else {
+                            responsePool = mockResponses['character-demo'] || defaultResponses;
+                        }
+
+                        const randomResponse = responsePool[Math.floor(Math.random() * responsePool.length)];
+
+                        return res.status(200).json({
+                            success: true,
+                            message: randomResponse,
+                        });
+                    }
                 } catch (error) {
                     console.error('Error generating dynamic response for database agent:', error)
 
@@ -323,18 +364,27 @@ Keep your responses concise and focused on the user's query.`;
             }
         } catch (dbError) {
             console.error('Error fetching agent from database:', dbError);
+
+            // Provide more detailed error information
+            return res.status(404).json({
+                success: false,
+                error: 'Agent not found',
+                details: `Could not find agent with handle: ${handle}. Please check that the handle exists in the database. The handle should match exactly what's in the URL (e.g., 'character-sherlock', 'katyperry').`
+            })
         }
 
         // If we get here, the agent was not found
         return res.status(404).json({
             success: false,
-            error: 'Agent not found'
+            error: 'Agent not found',
+            details: `No agent found with handle: ${handle}. Available handles include character-sherlock, katyperry, etc. The handle should match exactly what's in the URL.`
         })
     } catch (error) {
         console.error('Error in agent chat API:', error)
         return res.status(500).json({
             success: false,
-            error: 'An unexpected error occurred'
+            error: 'An unexpected error occurred',
+            details: error
         })
     }
 } 
